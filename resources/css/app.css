@@ -1,0 +1,139 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Tus otros estilos personalizados si los tienes */
+
+
+/* ========= INICIO: ESTILOS DE IMPRESIÓN ========= */
+@media print {
+    /* Ocultar elementos innecesarios */
+    body > div > nav, /* Barra de navegación */
+    main > div > div > div.bg-white:first-child, /* Contenedor del filtro y botón imprimir */
+    header, /* Cabecera con el título */
+    footer, /* Footer con tus créditos */
+    .print\:hidden { /* Elementos marcados específicamente */
+        display: none !important;
+    }
+
+    /* Ajustar el layout principal */
+    body {
+        font-size: 10pt; /* Tamaño de fuente más pequeño para imprimir */
+        background-color: white !important; /* Fondo blanco */
+        color: black !important; /* Asegurar texto negro */
+        -webkit-print-color-adjust: exact !important; /* Forzar colores de fondo/texto en Chrome/Safari */
+        print-color-adjust: exact !important; /* Forzar colores de fondo/texto en Firefox */
+    }
+    .py-12.print\:py-0 {
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
+    }
+    .print\:max-w-full {
+        max-width: 100% !important;
+    }
+    .print\:px-0 {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+    .print\:text-black {
+        color: black !important;
+    }
+
+
+    /* Estilos para las tarjetas y tablas en impresión */
+    .print\:shadow-none {
+        box-shadow: none !important;
+    }
+    .print\:border {
+        border-width: 1px !important;
+    }
+    .print\:border-gray-300 {
+        border-color: #d1d5db !important; /* Color gris claro */
+    }
+    .print\:mb-4 {
+        margin-bottom: 1rem !important; /* Espacio entre tablas */
+    }
+    .print\:p-2 {
+         padding: 0.5rem !important; /* Menos padding */
+    }
+
+
+    /* Evitar saltos de página dentro de las filas y ajustar tablas */
+    tr, thead, tbody, th, td {
+       page-break-inside: avoid !important;
+    }
+    table {
+        width: 100% !important; /* Asegurar ancho completo */
+        border-collapse: collapse !important; /* Colapsar bordes */
+    }
+    th, td {
+        border: 1px solid #eee !important; /* Añadir bordes finos a celdas */
+    }
+    .print\:divide-none {
+        border-top-width: 0px !important; /* Quitar divisores de Tailwind si interfieren */
+    }
+    .print\:px-1 {
+        padding-left: 0.25rem !important;
+        padding-right: 0.25rem !important;
+    }
+     .print\:py-1 {
+        padding-top: 0.25rem !important;
+        padding-bottom: 0.25rem !important;
+    }
+     .print\:pl-0 {
+        padding-left: 0 !important;
+     }
+    .print\:bg-transparent {
+        background-color: transparent !important;
+    }
+    .print\:border-b {
+        border-bottom-width: 1px !important;
+    }
+    .print\:border-gray-200 {
+         border-color: #e5e7eb !important;
+    }
+
+
+    /* Simplificar tarjetas de totales */
+    .print\:grid-cols-4 {
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    }
+     .print\:gap-4 {
+        gap: 1rem !important;
+     }
+    .print\:text-xs {
+        font-size: 0.75rem !important; /* 12px */
+        line-height: 1rem !important;
+    }
+     .print\:text-xxs { /* Clase personalizada para letra muy pequeña */
+        font-size: 0.65rem !important; /* ~10px */
+        line-height: 0.8rem !important;
+     }
+    .print\:text-xl {
+        font-size: 1.25rem !important; /* 20px */
+        line-height: 1.75rem !important;
+    }
+    .print\:text-base {
+         font-size: 1rem !important; /* 16px */
+         line-height: 1.5rem !important;
+    }
+    .print\:mb-2 {
+        margin-bottom: 0.5rem !important;
+    }
+
+
+    /* Estilo específico para ticket (opcional, muy básico) */
+    /* @page { */
+       /* Si quieres márgenes muy pequeños para ticket */
+       /* margin: 5mm; */
+       /* size: 80mm auto; */ /* Ancho común de ticket */
+    /* } */
+}
+/* ========= FIN: ESTILOS DE IMPRESIÓN ========= */
+
+/* ========= INICIO: Estilos personalizados para texto extra pequeño (opcional) ========== */
+.text-xxs {
+    font-size: 0.65rem; /* ~10px */
+    line-height: 0.8rem;
+}
+/* ========= FIN: Estilos personalizados ========== */

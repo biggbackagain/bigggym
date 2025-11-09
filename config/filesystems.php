@@ -19,21 +19,29 @@ return [
     'disks' => [
 
         'local' => [
-            'driver' => 'local', // <-- ASEGÚRATE QUE ESTÉ
+            'driver' => 'local',
             'root' => storage_path('app'),
             'throw' => false,
         ],
 
         'public' => [
-            'driver' => 'local', // <-- ASEGÚRATE QUE ESTÉ
-            'root' => storage_path('app/private/public'),
+            'driver' => 'local',
+            'root' => storage_path('app/private/public'), // Tu ruta de imágenes
             'url' => env('APP_URL').'/storage',
             'visibility' => 'public',
             'throw' => false,
         ],
 
+        // --- AÑADE ESTE DISCO NUEVO ---
+        'backups_local' => [
+            'driver' => 'local',
+            'root' => storage_path('app/backups'), // Carpeta donde se guardarán los ZIP
+            'throw' => false,
+        ],
+        // --- FIN DEL DISCO NUEVO ---
+
         's3' => [
-            'driver' => 's3', // <-- ASEGÚRATE QUE ESTÉ (aunque no lo uses)
+            'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),
             'secret' => env('AWS_SECRET_ACCESS_KEY'),
             'region' => env('AWS_DEFAULT_REGION'),
@@ -53,6 +61,7 @@ return [
     */
 
     'links' => [
+        // Apuntar public/storage a la carpeta privada
         public_path('storage') => storage_path('app/private/public'),
     ],
 

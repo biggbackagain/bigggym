@@ -1,12 +1,10 @@
 <!DOCTYPE html>
-{{-- Usamos el idioma configurado --}}
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        {{-- Título dinámico usando $globalSettings o el nombre de la app por defecto --}}
         <title>{{ $globalSettings['gym_name'] ?? config('app.name', 'Laravel') }}</title>
 
         <link rel="preconnect" href="https://fonts.bunny.net">
@@ -14,17 +12,18 @@
 
         @if(isset($globalSettings['gym_logo']) && $globalSettings['gym_logo'] && Storage::disk('public')->exists($globalSettings['gym_logo']))
             <link rel="icon" href="{{ Storage::url($globalSettings['gym_logo']) }}">
-        @else
-            {{-- Puedes poner un favicon por defecto aquí si quieres --}}
-            {{-- <link rel="icon" href="/favicon.ico"> --}}
         @endif
 
+        {{-- ¡ESTA LÍNEA ES CRUCIAL y necesita 'npm run dev' para funcionar! --}}
         @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+        {{-- Aquí se inyectan los estilos de impresión --}}
+        @stack('styles')
     </head>
     <body class="font-sans antialiased">
         <div class="min-h-screen bg-gray-100 flex flex-col">
             <div class="flex-grow">
-                {{-- Incluye la navegación (que ya usa $globalSettings para el logo) --}}
+                {{-- Incluye la navegación --}}
                 @include('layouts.navigation')
 
                 @if (isset($header))
@@ -50,7 +49,8 @@
                 <p class="mt-1">
                     <a href="https://irangarcia.mx" target="_blank" rel="noopener noreferrer" class="text-indigo-600 hover:underline mx-2">
                         Sitio Web
-                    </a> |
+                    </a>
+                    |
                     <a href="https://www.instagram.com/irangarcia93/" target="_blank" rel="noopener noreferrer" class="text-indigo-600 hover:underline mx-2">
                         Instagram
                     </a>
@@ -61,5 +61,8 @@
             </footer>
 
         </div>
+        
+        {{-- Aquí se inyectan scripts específicos de la página (como el de Alpine.js del POS) --}}
+        @stack('scripts')
     </body>
 </html>

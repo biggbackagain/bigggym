@@ -2,11 +2,10 @@
 
 namespace App\Providers;
 
-// QUITA: use Illuminate\Support\Facades\Gate;
-// QUITA: use App\Models\User;
-// QUITA: use Illuminate\Support\Facades\Log;
+// use Illuminate\Support\Facades\Gate; // Ya no se necesita
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
-
+// use App\Models\User; // Ya no se necesita
+// use Illuminate\Support\Facades\Log; // Ya no se necesita
 
 class AuthServiceProvider extends ServiceProvider
 {
@@ -26,7 +25,10 @@ class AuthServiceProvider extends ServiceProvider
     {
         $this->registerPolicies();
 
-        // --- SE ELIMINAN TODOS LOS Gate::define(...) ---
-
+        // --- SE ELIMINAN TODOS LOS GATES ---
+        // Gate::before(...)
+        // Gate::define('manage-users', ...)
+        // Gate::define('access-settings', ...)
+        // ... etc ...
     }
 }

@@ -26,7 +26,7 @@
                     <div class="relative">
                         <x-dropdown align="left" width="48">
                             <x-slot name="trigger">
-                                <button class="inline-flex items-center px-1 pt-1 border-b-2 {{ (request()->routeIs(['pos.*', 'my.report', 'products.*', 'inventory.*', 'sales.report', 'cash.*'])) ? 'border-indigo-400 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} text-sm font-medium leading-5 focus:outline-none transition duration-150 ease-in-out">
+                                <button class="inline-flex items-center px-1 pt-1 border-b-2 {{ (request()->routeIs(['pos.*', 'my.report', 'sales.index', 'products.*', 'inventory.*', 'sales.report', 'cash.*'])) ? 'border-indigo-400 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} text-sm font-medium leading-5 focus:outline-none transition duration-150 ease-in-out">
                                     <div>Ventas</div>
                                     <div class="ms-1">
                                          <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
@@ -36,6 +36,7 @@
                             <x-slot name="content">
                                 <x-dropdown-link :href="route('pos.index')" :active="request()->routeIs('pos.index')"> {{ __('Punto de Venta (POS)') }} </x-dropdown-link>
                                 <x-dropdown-link :href="route('my.report')" :active="request()->routeIs('my.report')"> {{ __('Mi Corte') }} </x-dropdown-link>
+                                <x-dropdown-link :href="route('sales.index')" :active="request()->routeIs('sales.index')"> {{ __('Historial de Ventas') }} </x-dropdown-link>
                                 <x-dropdown-link :href="route('products.index')" :active="request()->routeIs('products.*')"> {{ __('Administrar Productos') }} </x-dropdown-link>
                                 <x-dropdown-link :href="route('inventory.index')" :active="request()->routeIs('inventory.index')"> {{ __('Ajustar Inventario') }} </x-dropdown-link>
                                 <x-dropdown-link :href="route('sales.report')" :active="request()->routeIs('sales.report')"> {{ __('Reporte de Caja (Final)') }} </x-dropdown-link>
@@ -44,11 +45,11 @@
                         </x-dropdown>
                     </div>
 
-                    {{-- Menú Desplegable de Administración (SIN @CAN) --}}
+                    {{-- Menú Desplegable de Administración --}}
                      <div class="relative">
                         <x-dropdown align="left" width="48">
                             <x-slot name="trigger">
-                                <button class="inline-flex items-center px-1 pt-1 border-b-2 {{ (request()->routeIs(['admin.memberships.*', 'mail.*', 'settings.*', 'backups.*'])) ? 'border-indigo-400 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} text-sm font-medium leading-5 focus:outline-none transition duration-150 ease-in-out">
+                                <button class="inline-flex items-center px-1 pt-1 border-b-2 {{ (request()->routeIs(['admin.memberships.*', 'mail.*', 'settings.*', 'users.*', 'backups.*'])) ? 'border-indigo-400 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} text-sm font-medium leading-5 focus:outline-none transition duration-150 ease-in-out">
                                     <div>Administración</div>
                                     <div class="ms-1">
                                          <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
@@ -126,14 +127,13 @@
                 </div>
             </div>
 
-             {{-- Links Administrativos (Móvil) (SIN @CAN) --}}
+             {{-- Links Administrativos (Móvil) --}}
              <div class="pt-2 pb-1 border-t border-gray-200">
                 <div class="px-4"><div class="font-medium text-base text-gray-800">Administración</div></div>
                 <div class="mt-1 space-y-1">
                     <x-responsive-nav-link :href="route('admin.memberships.index')" :active="request()->routeIs('admin.memberships.*')"> {{ __('Tarifas') }} </x-responsive-nav-link>
                     <x-responsive-nav-link :href="route('mail.index')" :active="request()->routeIs('mail.index')"> {{ __('Enviar Correos') }} </x-responsive-nav-link>
                     <x-responsive-nav-link :href="route('settings.index')" :active="request()->routeIs('settings.*')"> {{ __('Configuración General') }} </x-responsive-nav-link>
-                    {{-- <x-responsive-nav-link :href="route('users.index')" :active="request()->routeIs('users.*')"> {{ __('Gestionar Usuarios') }} </x-responsive-nav-link> --}} {{-- Eliminado --}}
                     <x-responsive-nav-link :href="route('backups.index')" :active="request()->routeIs('backups.*')">
                          {{ __('Backups') }}
                     </x-responsive-nav-link>

@@ -6,37 +6,41 @@ use Illuminate\Http\Request;
 use App\Models\Sale;
 use App\Models\Payment;
 use App\Models\CashMovement;
-use App\Models\Setting; // Asegúrate que esté importado
-use Carbon\Carbon;
-use Illuminate\Support\Facades\Mail; // Asegúrate que esté importado
-use Illuminate\Support\Facades\Cache; // Asegúrate que esté importado
-use App\Mail\SalesReportMail; // Asegúrate que esté importado
-use Illuminate\Mail\Mailer; // Asegúrate que esté importado
-use Exception; // Asegúrate que esté importado
-use Illuminate\Support\Facades\Log; // Asegúrate que esté importado
+use App\Models\Setting;
+use Carbon\Carbon; // <-- Asegúrate que Carbon esté importado
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Cache;
+use App\Mail\SalesReportMail;
+use Illuminate\Mail\Mailer;
+use Exception;
+use Illuminate\Support\Facades\Log;
 
 class SalesReportController extends Controller
 {
     /**
-     * Muestra el reporte de caja (ventas, membresías y movimientos) para un rango de fechas.
+     * Muestra el reporte de caja (Final).
+     *
+     * ***** ESTE MÉTODO DEBE DEFINIR $startDate y $endDate *****
      */
     public function index(Request $request)
     {
         // 1. Validar las fechas de entrada
         $validated = $request->validate([
             'start_date' => 'nullable|date',
-            'end_date' => 'nullable|date|after_or_equal:start_date',
+            'end_date' => 'nullable|date|after_or_equal:start_date', 
         ],[
             'end_date.after_or_equal' => 'La fecha final debe ser igual o posterior a la fecha inicial.'
         ]);
 
         // 2. Determinar el rango de fechas a consultar
+        // Si no hay fecha, usa el día de hoy
         $startDate = $request->filled('start_date') ? Carbon::parse($validated['start_date'])->startOfDay() : Carbon::today()->startOfDay();
         $endDate = $request->filled('end_date') ? Carbon::parse($validated['end_date'])->endOfDay() : $startDate->copy()->endOfDay();
 
         // --- VENTAS DE PRODUCTOS ---
-        $productSales = Sale::whereBetween('created_at', [$startDate, $endDate])
-                           ->with('products')
+        $productSales = Sale::whereNull('deleted_at')
+                           ->whereBetween('created_at', [$startDate, $endDate])
+                           ->with('products') 
                            ->orderBy('created_at', 'desc')
                            ->get();
         $totalProductSalesAmount = $productSales->sum('total_amount');
@@ -68,10 +72,10 @@ class SalesReportController extends Controller
         // --- CALCULAR TOTAL GENERAL DE CAJA ---
         $grandTotal = $totalProductSalesAmount + $totalMembershipPaymentsAmount + $netCashMovement;
 
-        // Pasar todos los datos calculados a la vista
+        // 3. PASAR LAS VARIABLES CLAVE A LA VISTA
         return view('sales-report.index', compact(
-            'startDate',
-            'endDate',
+            'startDate', // <-- ¡VARIABLE REQUERIDA POR LA VISTA!
+            'endDate',   // <-- VARIABLE REQUERIDA POR LA VISTA!
             'productSales',
             'totalProductSalesAmount',
             'totalProductSalesCount',
@@ -86,15 +90,16 @@ class SalesReportController extends Controller
             'grandTotal'
         ));
     }
-
+    
     /**
      * Envía el reporte de caja por correo electrónico.
      */
     public function sendEmailReport(Request $request)
     {
-         Log::info('--- Iniciando envío de reporte de caja ---'); // <-- Log 1
+        // ... (el código para sendEmailReport es largo y está bien,
+        // solo asegúrate de que esté completo en tu archivo) ...
 
-         // 1. Validar fechas
+        // 1. Validar fechas
         $validated = $request->validate([
             'start_date' => 'nullable|date_format:Y-m-d',
             'end_date' => 'nullable|date_format:Y-m-d|after_or_equal:start_date',
@@ -106,13 +111,9 @@ class SalesReportController extends Controller
 
         $startDate = $request->filled('start_date') ? Carbon::parse($validated['start_date'])->startOfDay() : Carbon::today()->startOfDay();
         $endDate = $request->filled('end_date') ? Carbon::parse($validated['end_date'])->endOfDay() : $startDate->copy()->endOfDay();
-        Log::info('Fechas validadas: ' . $startDate->toDateString() . ' a ' . $endDate->toDateString()); // <-- Log 2
 
-        // 2. Obtener configuración y destinatario
-        $mailSettings = Cache::remember('mail_settings', 60*60, function () {
-            Log::info('Recaching mail_settings for sending report.'); // Log para depuración de caché
-            return Setting::where('key', 'like', 'mail_%')->pluck('value', 'key');
-        });
+        // 2. Obtener la configuración de correo y el destinatario
+        $mailSettings = Cache::remember('mail_settings', 60*60, function () { /* ... */ });
          $globalSettings = Cache::get('global_settings');
          if (!$globalSettings) {
              Log::warning('Global settings cache missed, recaching now for report sending.');
@@ -130,15 +131,16 @@ class SalesReportController extends Controller
             return back()->with('error', 'Error: La configuración de correo (Gmail) no está completa. Revisa Usuario, Contraseña de App y Mailer en Configuración.');
         }
          if (empty($recipientEmail)) {
-             Log::warning('Correo destinatario para reportes no configurado.');
+             Log::warning('Report recipient email is not configured.');
             return back()->with('error', 'Error: No se ha configurado un correo electrónico para recibir los reportes en Configuración.');
         }
-        Log::info('Configuración de correo y destinatario (' . $recipientEmail . ') validados.'); // <-- Log 3
 
 
         // 3. Obtener los datos del reporte
-        Log::info('Obteniendo datos del reporte...'); // <-- Log 4
-        $productSales = Sale::whereBetween('created_at', [$startDate, $endDate])->with('products')->orderBy('created_at', 'desc')->get();
+        Log::info('Obteniendo datos del reporte...');
+        $productSales = Sale::whereNull('deleted_at')
+                           ->whereBetween('created_at', [$startDate, $endDate])
+                           ->with('products')->orderBy('created_at', 'desc')->get();
         $totalProductSalesAmount = $productSales->sum('total_amount');
         $totalProductSalesCount = $productSales->count();
         $membershipPayments = Payment::whereBetween('payment_date', [$startDate->toDateString(), $endDate->toDateString()])->with(['member', 'subscription.membershipType'])->orderBy('created_at', 'desc')->get();
@@ -156,11 +158,9 @@ class SalesReportController extends Controller
             'membershipPayments', 'totalMembershipPaymentsAmount', 'totalMembershipPaymentsCount',
             'cashMovements', 'totalCashEntries', 'totalCashExits', 'netCashMovement', 'grandTotal'
         );
-        Log::info('Datos del reporte recopilados.'); // <-- Log 5
 
         // 4. Configurar y Enviar Correo usando Mailer dinámico
         try {
-            Log::info('Preparando configuración dinámica del Mailer...'); // <-- Log 6
             // Prepara la configuración específica para este envío
             $mailConfig = [
                 'transport' => $mailSettings->get('mail_mailer'),
@@ -180,16 +180,15 @@ class SalesReportController extends Controller
             $transport = app('mail.manager')->createSymfonyTransport($mailConfig); // Crea el transportador
             $dynamicMailer = new Mailer('report_smtp', app('view'), $transport, app('events')); // Crea el Mailer
             $dynamicMailer->alwaysFrom($fromAddress, $fromName); // Establece el remitente
-            Log::info('Mailer dinámico creado.'); // <-- Log 7
 
             // Enviar el correo usando el Mailable SalesReportMail
-            Log::info('Intentando enviar correo a: ' . $recipientEmail); // <-- Log 8
             $dynamicMailer->to($recipientEmail)
                           ->send(new SalesReportMail($reportData, $fromAddress, $fromName));
-            Log::info('Correo de reporte enviado exitosamente (comando send ejecutado).'); // <-- Log 9
+
+            Log::info('Sales report email sent successfully to: ' . $recipientEmail);
 
         } catch (Exception $e) {
-            Log::error('FALLO al enviar el correo del reporte.', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]); // <-- Log de Error Detallado
+            Log::error('Failed to send sales report email.', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             Cache::forget('mail_settings'); // Limpiar caché si falló la conexión
             report($e); // Registrar el error completo en logs
             return back()->with('error', 'Error al enviar el correo del reporte: ' . $e->getMessage());

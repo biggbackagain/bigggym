@@ -13,7 +13,7 @@ class Payment extends Model
 
     protected $fillable = [
         'member_id',
-        'user_id', // <-- AÑADIR ESTA LÍNEA
+        'user_id', // <-- Campo para seguir quién registró el pago
         'amount',
         'payment_date',
     ];

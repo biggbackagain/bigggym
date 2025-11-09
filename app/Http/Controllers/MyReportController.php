@@ -16,6 +16,7 @@ class MyReportController extends Controller
      */
     public function index(Request $request)
     {
+        // 1. Validar Fechas (Permite que no se envíen, usando el día de hoy por defecto)
         $validated = $request->validate([
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
@@ -23,10 +24,11 @@ class MyReportController extends Controller
             'end_date.after_or_equal' => 'La fecha final debe ser igual o posterior a la fecha inicial.'
         ]);
 
+        // 2. Determinar el rango de fechas (Aseguramos que sean objetos Carbon)
         $startDate = $request->filled('start_date') ? Carbon::parse($validated['start_date'])->startOfDay() : Carbon::today()->startOfDay();
         $endDate = $request->filled('end_date') ? Carbon::parse($validated['end_date'])->endOfDay() : $startDate->copy()->endOfDay();
 
-        $userId = Auth::id(); // <-- OBTENER ID DEL CAJERO
+        $userId = Auth::id(); // <-- OBTENER ID DEL CAJERO LOGUEADO
 
         // --- VENTAS DE PRODUCTOS (FILTRADO POR USUARIO) ---
         $productSales = Sale::where('user_id', $userId) // <-- FILTRO
@@ -35,6 +37,7 @@ class MyReportController extends Controller
                            ->orderBy('created_at', 'desc')
                            ->get();
         $totalProductSalesAmount = $productSales->sum('total_amount');
+        $totalProductSalesCount = $productSales->count(); // Se usa en la vista (opcional)
 
         // --- PAGOS DE MEMBRESÍAS (FILTRADO POR USUARIO) ---
         $membershipPayments = Payment::where('user_id', $userId) // <-- FILTRO
@@ -43,6 +46,7 @@ class MyReportController extends Controller
                                      ->orderBy('created_at', 'desc')
                                      ->get();
         $totalMembershipPaymentsAmount = $membershipPayments->sum('amount');
+        $totalMembershipPaymentsCount = $membershipPayments->count(); // Se usa en la vista (opcional)
 
         // --- MOVIMIENTOS DE CAJA (FILTRADO POR USUARIO) ---
         $cashMovements = CashMovement::where('user_id', $userId) // <-- FILTRO
@@ -57,9 +61,10 @@ class MyReportController extends Controller
         // --- CALCULAR TOTAL DEL CAJERO ---
         $grandTotal = $totalProductSalesAmount + $totalMembershipPaymentsAmount + $netCashMovement;
 
-        // Reutilizamos la vista del reporte general, pero con datos filtrados
+        // 3. Retornar la vista, PASANDO TODAS LAS VARIABLES NECESARIAS
         return view('my-report.index', compact(
-            'startDate', 'endDate', 'productSales', 'totalProductSalesAmount',
+            'startDate', 'endDate', // <-- LAS VARIABLES QUE FALTABAN
+            'productSales', 'totalProductSalesAmount',
             'membershipPayments', 'totalMembershipPaymentsAmount',
             'cashMovements', 'totalCashEntries', 'totalCashExits', 'netCashMovement',
             'grandTotal'

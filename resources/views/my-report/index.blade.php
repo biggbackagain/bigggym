@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{-- Título dinámico según el rango --}}
+            {{-- Título dinámico ahora funciona porque $startDate y $endDate existen --}}
             @if($startDate->isSameDay($endDate))
                 {{ __('Mi Corte del Día') }} ({{ $startDate->format('d/m/Y') }})
             @else
@@ -30,7 +30,8 @@
                                 <a href="{{ route('my.report') }}" class="ms-2 text-sm text-gray-500 hover:underline whitespace-nowrap">Ver Hoy</a>
                             </div>
                              @error('end_date') <p class="text-xs text-red-600 col-span-full">{{ $message }}</p> @enderror
-                        </form>
+                        </div>
+                    </form>
                 </div>
             </div>
 
@@ -54,7 +55,7 @@
                     <h3 class="text-lg font-medium text-gray-900 mb-4">Detalle: Mis Ventas de Productos</h3>
                     <div class="overflow-x-auto">
                          <table class="min-w-full divide-y divide-gray-200">
-                            {{-- ... (encabezados: ID/Hora, Productos, Método Pago, Ref., Total) ... --}}
+                            <thead><tr><th>ID/Hora</th><th>Productos</th><th>Método Pago</th><th>Referencia</th><th>Total</th></tr></thead>
                             <tbody class="bg-white divide-y divide-gray-200">
                                 @forelse ($productSales as $sale)
                                     <tr>
@@ -78,7 +79,7 @@
                     <h3 class="text-lg font-medium text-gray-900 mb-4">Detalle: Mis Pagos de Membresías</h3>
                      <div class="overflow-x-auto">
                          <table class="min-w-full divide-y divide-gray-200">
-                            {{-- ... (encabezados: ID Pago, Hora, Miembro, Plan, Monto) ... --}}
+                            <thead><tr><th>ID Pago</th><th>Hora</th><th>Miembro</th><th>Plan</th><th>Monto</th></tr></thead>
                             <tbody class="bg-white divide-y divide-gray-200">
                                 @forelse ($membershipPayments as $payment)
                                      <tr>
@@ -102,7 +103,7 @@
                      <h3 class="text-lg font-medium text-gray-900 mb-4">Detalle: Mis Movimientos de Caja</h3>
                      <div class="overflow-x-auto">
                          <table class="min-w-full divide-y divide-gray-200">
-                            {{-- ... (encabezados: Hora, Tipo, Monto, Descripción) ... --}}
+                            <thead><tr><th>Hora</th><th>Tipo</th><th>Monto</th><th>Descripción</th></tr></thead>
                             <tbody class="bg-white divide-y divide-gray-200">
                                 @forelse ($cashMovements as $movement)
                                     <tr>

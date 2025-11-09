@@ -9,13 +9,12 @@ use Illuminate\Support\Facades\DB;
 use Exception;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Auth;
-// Imports para correo
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\SaleReceiptMail;
 use App\Models\Setting;
 use Illuminate\Mail\Mailer;
+use Carbon\Carbon;
 
 class PosController extends Controller
 {
@@ -26,13 +25,7 @@ class PosController extends Controller
     {
         $query = Product::query()->where('is_active', true)->where('stock', '>', 0);
 
-        if ($request->filled('search')) {
-            $search = $request->input('search');
-            $query->where(function($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('sku', 'like', "%{$search}%");
-            });
-        }
+        if ($request->filled('search')) { /* ... */ }
 
         $products = $query->orderBy('name')->get();
         return view('pos.index', compact('products'));
@@ -40,7 +33,6 @@ class PosController extends Controller
 
     /**
      * Almacena la venta y redirige a la vista del ticket.
-     * ***** MÉTODO store() MODIFICADO *****
      */
     public function store(Request $request)
     {
@@ -57,7 +49,7 @@ class PosController extends Controller
         $paymentReference = ($paymentMethod === 'cash') ? null : ($validated['payment_reference'] ?? null);
         $totalAmount = 0;
         $pivotData = [];
-        $sale = null; // Definir $sale fuera del scope de la transacción
+        $sale = null;
 
         try {
             DB::transaction(function () use ($cartItems, $paymentMethod, $paymentReference, &$totalAmount, &$pivotData, &$sale) {
@@ -95,21 +87,17 @@ class PosController extends Controller
             return redirect()->route('pos.index')->with('error', $e->getMessage());
         }
 
-        // --- CAMBIO CLAVE: Redirigir a la vista del ticket ---
-        // Pasamos un mensaje de éxito flash
+        // Redirigir a la vista del ticket
         session()->flash('success', '¡Venta registrada exitosamente!');
         return redirect()->route('pos.receipt', $sale->id);
     }
 
-    // ========= INICIO: NUEVOS MÉTODOS =========
-
     /**
-     * Muestra la página del ticket/comprobante de venta.
+     * Muestra la página del ticket/comprobante de venta (para reimprimir).
      */
     public function showReceipt(Sale $sale)
     {
-        // Cargar los productos de la venta
-        $sale->load('products');
+        $sale->load('products', 'user');
         return view('pos.receipt', compact('sale'));
     }
 
@@ -122,21 +110,16 @@ class PosController extends Controller
             'email' => 'required|email'
         ]);
 
-        $sale->load('products'); // Asegurarse que los productos estén cargados
+        $sale->load('products');
 
         try {
-            // 1. Obtener configuración de correo (igual que en otros controladores)
-            $mailSettings = Cache::remember('mail_settings', 60*60, function () {
-                return Setting::where('key', 'like', 'mail_%')->pluck('value', 'key');
-            });
-            $globalSettings = Cache::get('global_settings'); // Asumir que ya está en caché
+            $mailSettings = Cache::remember('mail_settings', 60*60, function () { return Setting::where('key', 'like', 'mail_%')->pluck('value', 'key'); });
+            $globalSettings = Cache::get('global_settings');
 
-            // 2. Validar que la configuración exista
             if (empty($mailSettings->get('mail_username')) || empty($mailSettings->get('mail_password'))) {
                 return back()->with('error', 'Error: La configuración de correo no está completa.');
             }
             
-            // 3. Configurar dinámicamente
             $mailConfig = [
                 'transport' => $mailSettings->get('mail_mailer'),
                 'host' => $mailSettings->get('mail_host'),
@@ -149,13 +132,11 @@ class PosController extends Controller
             $fromAddress = $mailSettings->get('mail_from_address');
             $fromName = $mailSettings->get('mail_from_name') ?? $globalSettings->get('gym_name', config('app.name'));
 
-            // 4. Crear Mailer dinámico
             $mailer = app()->makeWith('mailer', ['name' => 'receipt_smtp']);
             $transport = app('mail.manager')->createSymfonyTransport($mailConfig);
             $dynamicMailer = new Mailer('receipt_smtp', app('view'), $transport, app('events'));
             $dynamicMailer->alwaysFrom($fromAddress, $fromName);
 
-            // 5. Enviar el correo
             $dynamicMailer->to($validated['email'])
                           ->send(new SaleReceiptMail($sale, $fromAddress, $fromName));
 
@@ -166,5 +147,4 @@ class PosController extends Controller
 
         return back()->with('success', 'Comprobante enviado exitosamente a ' . $validated['email']);
     }
-    // ========= FIN: NUEVOS MÉTODOS =========
 }

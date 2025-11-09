@@ -15,7 +15,7 @@ use App\Http\Controllers\SalesReportController;
 use App\Http\Controllers\CashMovementController;
 use App\Http\Controllers\BackupController;
 use App\Http\Controllers\MyReportController;
-// No usamos UserController
+use App\Http\Controllers\SalesController; // <-- Historial de Ventas
 
 /*
 |--------------------------------------------------------------------------
@@ -27,7 +27,7 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-// --- Rutas Protegidas (Requieren inicio de sesión) ---
+// --- Rutas Protegidas (Requieren inicio de sesión, sin permisos) ---
 Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -67,12 +67,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('pos', [PosController::class, 'index'])->name('pos.index');
     Route::post('pos', [PosController::class, 'store'])->name('pos.store');
 
-    // --- RUTAS NUEVAS PARA TICKET/RECIBO ---
-    Route::get('pos/receipt/{sale}', [PosController::class, 'showReceipt'])->name('pos.receipt');
+    // --- RUTAS DE HISTORIAL Y TICKET ---
+    Route::get('pos/receipt/{sale}', [PosController::class, 'showReceipt'])->name('pos.receipt'); // <-- RUTA DEL TICKET
     Route::post('pos/receipt/{sale}/email', [PosController::class, 'emailReceipt'])->name('pos.receipt.email');
-    // --- FIN RUTAS NUEVAS ---
 
-    // Módulo de Reporte de Caja (Final)
+    // Módulo de Historial de Ventas (CRUD para LISTAR/CANCELAR)
+    Route::resource('sales', SalesController::class)->only(['index', 'show', 'destroy']); 
+    // --- FIN RUTAS DE HISTORIAL Y TICKET ---
+
+    // Módulo de Reporte de Caja
     Route::get('sales-report', [SalesReportController::class, 'index'])->name('sales.report');
     Route::post('sales-report/email', [SalesReportController::class, 'sendEmailReport'])->name('sales.report.email');
 
@@ -94,6 +97,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->name('delete')
             ->where('filename', '.*');
     });
+
+    // Rutas de Gestión de Usuarios (ELIMINADAS)
 
 });
 

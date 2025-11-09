@@ -5,28 +5,31 @@ namespace App\Http\Controllers;
 use App\Models\Member;
 use App\Models\MembershipType;
 use App\Models\Payment;
-use App\Models\Setting;
+use App\Models\Setting; // <-- Asegúrate de importar Setting
 use App\Models\Subscription;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Cache; // <-- Asegúrate de importar Cache
 use Illuminate\Support\Facades\Mail;
 use App\Mail\WelcomeMemberMail;
 use Illuminate\Mail\Mailer;
 use Exception;
-use Illuminate\Support\Facades\Log; // Import Log facade
+use Illuminate\Support\Facades\Log;
+use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
+use Illuminate\Support\Arr;
+
 
 class MemberController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+    // ... (métodos index, create - sin cambios) ...
     public function index(Request $request)
     {
         $query = Member::query()->with('latestSubscription');
-
-        // Search Logic
         if ($request->filled('search')) {
             $search = $request->input('search');
             $query->where(function($q) use ($search) {
@@ -35,8 +38,6 @@ class MemberController extends Controller
                   ->orWhere('email', 'like', "%{$search}%");
             });
         }
-
-        // Status Filter Logic
         if ($request->filled('status')) {
             if ($request->status == 'active') {
                 $query->active();
@@ -44,15 +45,10 @@ class MemberController extends Controller
                 $query->inactive();
             }
         }
-
         $members = $query->orderBy('name')->paginate(15);
-
         return view('members.index', compact('members'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
         $membershipTypes = MembershipType::all();
@@ -62,6 +58,7 @@ class MemberController extends Controller
 
     /**
      * Store a newly created resource in storage.
+     * (Esta es la lógica que implementa el prefijo configurable)
      */
     public function store(Request $request)
     {
@@ -75,42 +72,47 @@ class MemberController extends Controller
         ]);
 
         $isStudent = $request->has('is_student');
-        $photoRelativePath = null; // Variable for relative path
+        $photoRelativePath = null;
 
-        // Handle Photo Upload (using 'public' disk configured in filesystems.php)
         if ($request->hasFile('profile_photo')) {
-            // Store file using 'public' disk, returns relative path e.g., 'member_photos/random.jpg'
             $photoRelativePath = $request->file('profile_photo')->store('member_photos', 'public');
         }
 
-        // Create Member
-        $member = Member::create([
-            'name' => $validated['name'],
-            'phone' => $validated['phone'],
-            'email' => $validated['email'],
-            'profile_photo_path' => $photoRelativePath, // Save relative path
-            'is_student' => $isStudent,
-            'status' => 'expired', // Default status
-            'member_code' => 'TEMP' // Temporary code
-        ]);
+        // --- INICIO LÓGICA DE GUARDADO EN 2 PASOS ---
+        // 1. Crear el miembro SIN el member_code
+        $member = new Member();
+        $member->name = $validated['name'];
+        $member->phone = $validated['phone'];
+        $member->email = $validated['email'];
+        $member->profile_photo_path = $photoRelativePath;
+        $member->is_student = $isStudent;
+        $member->status = 'expired';
+        $member->save(); // <-- 1er Guardado (aquí es donde fallaba)
 
-        // Generate Member Code using prefix from settings
+        // 2. Generar el Código de Miembro AHORA que tenemos $member->id
+        // Obtener el prefijo de la Configuración (cacheado para velocidad)
         $settingsCache = Cache::remember('global_settings', 60*60, function () {
              return Setting::pluck('value', 'key');
         });
-        $prefix = $settingsCache->get('member_code_prefix', 'GYM-'); // Default prefix if not set
-        $member->member_code = $prefix . str_pad($member->id, 4, '0', STR_PAD_LEFT);
+        $prefix = $settingsCache->get('member_code_prefix', 'GYM-'); // Valor por defecto 'GYM-'
+        
+        // Asignar el código (ej: "GYM-1" o "1" si el prefijo está vacío)
+        $member->member_code = $prefix . $member->id;
+        // --- FIN LÓGICA DE GUARDADO ---
 
 
-        // Handle Subscription if selected
+        // Lógica de Suscripción (si aplica)
         if ($request->filled('membership_type_id')) {
             $type = MembershipType::find($validated['membership_type_id']);
             $amount = $isStudent ? $type->price_student : $type->price_general;
+            
             $payment = Payment::create([
                 'member_id' => $member->id,
+                'user_id' => Auth::id(),
                 'amount' => $amount,
                 'payment_date' => Carbon::today()
             ]);
+            
             $startDate = Carbon::today();
             $endDate = $startDate->copy()->addDays($type->duration_days);
             Subscription::create([
@@ -120,21 +122,20 @@ class MemberController extends Controller
                 'start_date' => $startDate,
                 'end_date' => $endDate
             ]);
-            $member->status = 'active'; // Update status if subscription added
+            $member->status = 'active';
         }
+        
+        // 3. Guardar el miembro por segunda vez (AHORA SÍ con el código y el estado)
+        $member->save();
 
-        $member->save(); // Save final member code and status
-
-        // --- START: SEND WELCOME EMAIL ---
-        if ($member->email) { // Only if email was provided
+        // --- Enviar Correo de Bienvenida ---
+        if ($member->email) {
             try {
-                // Get mail settings (cached or from DB)
                 $mailSettings = Cache::remember('mail_settings', 60*60, function () {
                     return Setting::where('key', 'like', 'mail_%')->pluck('value', 'key');
                 });
 
-                // Basic validation of mail settings
-                if (!empty($mailSettings['mail_username']) && !empty($mailSettings['mail_password']) && !empty($mailSettings['mail_mailer'])) {
+                if (!empty($mailSettings['mail_username']) && !empty($mailSettings['mail_password'])) {
                      $mailConfig = [
                         'transport' => $mailSettings['mail_mailer'],
                         'host' => $mailSettings['mail_host'],
@@ -148,28 +149,17 @@ class MemberController extends Controller
                     $fromAddress = $mailSettings['mail_from_address'];
                     $fromName = $mailSettings['mail_from_name'] ?? $settingsCache->get('gym_name', config('app.name'));
 
-                    // Create dynamic Mailer instance
                     $mailer = app()->makeWith('mailer', ['name' => 'welcome_smtp']);
                     $transport = app('mail.manager')->createSymfonyTransport($mailConfig);
                     $dynamicMailer = new Mailer('welcome_smtp', app('view'), $transport, app('events'));
                     $dynamicMailer->alwaysFrom($fromAddress, $fromName);
-
-                    // Send the welcome email using the dynamic mailer
                     $dynamicMailer->to($member->email)
                                   ->send(new WelcomeMemberMail($member, $fromName, $fromAddress, $fromName));
                 } else {
-                    // Log if mail settings are incomplete
                      Log::warning('Configuración de correo incompleta. No se envió bienvenida a: ' . $member->email);
                 }
-
-            } catch (Exception $e) {
-                // Log any exception during email sending but don't stop the request
-                report($e); // Saves the full error to storage/logs/laravel.log
-                // Optional: Flash a warning message to the user
-                // session()->flash('warning', 'Miembro registrado, pero hubo un error al enviar el correo de bienvenida. Revise los logs.');
-            }
+            } catch (Exception $e) { report($e); }
         }
-        // --- END: SEND WELCOME EMAIL ---
 
         return redirect()->route('members.index')->with('success', 'Miembro registrado exitosamente.');
     }
@@ -179,7 +169,6 @@ class MemberController extends Controller
      */
     public function show(Member $member)
     {
-        // Redirect to edit page as we don't have a dedicated show page
         return redirect()->route('members.edit', $member);
     }
 
@@ -188,7 +177,7 @@ class MemberController extends Controller
      */
     public function edit(Member $member)
     {
-        $membershipTypes = MembershipType::all(); // Pass membership types
+        $membershipTypes = MembershipType::all();
         return view('members.edit', compact('member', 'membershipTypes'));
     }
 
@@ -200,7 +189,7 @@ class MemberController extends Controller
          $validated = $request->validate([
             'name' => 'required|string|max:255',
             'phone' => 'nullable|string|max:20',
-            'email' => 'nullable|email|max:255|unique:members,email,' . $member->id, // Ignore self on unique check
+            'email' => 'nullable|email|max:255|unique:members,email,' . $member->id,
             'profile_photo' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
             'is_student' => 'nullable|boolean',
         ]);
@@ -210,13 +199,10 @@ class MemberController extends Controller
         $member->email = $validated['email'];
         $member->is_student = $request->has('is_student');
 
-        // Handle Photo Update
         if ($request->hasFile('profile_photo')) {
-            // Delete previous photo if it exists (using relative path)
             if ($member->profile_photo_path) {
                  Storage::disk('public')->delete($member->profile_photo_path);
             }
-            // Store new photo using 'public' disk and save relative path
             $member->profile_photo_path = $request->file('profile_photo')->store('member_photos', 'public');
         }
 
@@ -232,54 +218,46 @@ class MemberController extends Controller
     {
         try {
             $memberName = $member->name;
-             // Photo deletion is handled by the 'deleting' event in the Member model
             $member->delete();
             return redirect()->route('members.index')->with('success', "Miembro '{$memberName}' eliminado exitosamente.");
         } catch (\Exception $e) {
-            report($e); // Log the error
+            report($e);
             return redirect()->route('members.index')->with('error', 'Error al eliminar al miembro.');
         }
     }
 
-    // ========= START: NEW METHODS FOR RENEWAL =========
-
     /**
-     * Show the form to renew a member's subscription.
+     * Muestra el formulario de renovación.
      */
     public function showRenewForm(Member $member)
     {
-        $membershipTypes = MembershipType::all(); // Get available plans
+        $membershipTypes = MembershipType::all();
         return view('members.renew', compact('member', 'membershipTypes'));
     }
 
     /**
-     * Process the renewal form, create payment and subscription.
+     * Procesa la renovación.
      */
     public function processRenewal(Request $request, Member $member)
     {
-        // 1. Validation (only need the plan ID)
         $validated = $request->validate([
             'membership_type_id' => 'required|exists:membership_types,id'
         ]);
 
         try {
             $type = MembershipType::find($validated['membership_type_id']);
-
-            // 2. Determine price (based on member's student status)
             $amount = $member->is_student ? $type->price_student : $type->price_general;
 
-            // 3. Create the Payment record
             $payment = Payment::create([
                 'member_id' => $member->id,
+                'user_id' => Auth::id(), // Guarda quién registró la renovación
                 'amount' => $amount,
-                'payment_date' => Carbon::today() // Today's date
+                'payment_date' => Carbon::today()
             ]);
 
-            // 4. Calculate dates for the new membership
             $startDate = Carbon::today();
             $endDate = $startDate->copy()->addDays($type->duration_days);
 
-            // 5. Create the new Subscription record
             Subscription::create([
                 'member_id' => $member->id,
                 'membership_type_id' => $type->id,
@@ -288,17 +266,14 @@ class MemberController extends Controller
                 'end_date' => $endDate
             ]);
 
-            // 6. Update the member's status to ACTIVE
             $member->status = 'active';
             $member->save();
 
         } catch (Exception $e) {
-            report($e); // Log the error
+            report($e);
             return redirect()->route('members.edit', $member)->with('error', 'Ocurrió un error al procesar la renovación.');
         }
 
-        // 7. Redirect back to the list (or edit page) with success message
         return redirect()->route('members.index')->with('success', "Renovación para {$member->name} registrada exitosamente.");
     }
-    // ========= END: NEW METHODS FOR RENEWAL =========
 }

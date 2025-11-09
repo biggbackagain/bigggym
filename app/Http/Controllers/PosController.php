@@ -7,7 +7,8 @@ use App\Models\Product;
 use App\Models\Sale;
 use Illuminate\Support\Facades\DB;
 use Exception;
-use Illuminate\Validation\Rule; // Import Rule for validation
+use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Auth; // <-- AÑADIR IMPORT
 
 class PosController extends Controller
 {
@@ -35,19 +36,17 @@ class PosController extends Controller
      */
     public function store(Request $request)
     {
-        // Validación actualizada
         $validated = $request->validate([
             'cart' => 'required|array|min:1',
             'cart.*.id' => 'required|integer|exists:products,id',
             'cart.*.quantity' => 'required|integer|min:1',
-            'payment_method' => ['required', Rule::in(['cash', 'transfer', 'card'])], // Validar método
-            'payment_reference' => 'nullable|string|max:255', // Referencia opcional
+            'payment_method' => ['required', Rule::in(['cash', 'transfer', 'card'])],
+            'payment_reference' => 'nullable|string|max:255',
         ]);
 
         $cartItems = $validated['cart'];
         $paymentMethod = $validated['payment_method'];
-        // Asegurarse de que la referencia sea null si es efectivo
-        $paymentReference = ($paymentMethod === 'cash') ? null : $validated['payment_reference'];
+        $paymentReference = ($paymentMethod === 'cash') ? null : ($validated['payment_reference'] ?? null);
         $totalAmount = 0;
         $pivotData = [];
 
@@ -71,8 +70,9 @@ class PosController extends Controller
                     ];
                 }
 
-                // Crear la Venta CON los datos de pago
+                // Crear la Venta CON los datos de pago y el ID del usuario
                 $sale = Sale::create([
+                    'user_id' => Auth::id(), // <-- AÑADIR ID DE USUARIO LOGUEADO
                     'total_amount' => $totalAmount,
                     'payment_method' => $paymentMethod,
                     'payment_reference' => $paymentReference,
@@ -86,6 +86,6 @@ class PosController extends Controller
             return redirect()->route('pos.index')->with('error', $e->getMessage());
         }
 
-        return redirect()->route('pos.index')->with('success', '¡Venta registrada exitosamente! Total: $' . number_format($totalAmount, 2) . ' (' . ucfirst($paymentMethod) . ')'); // Añadido método de pago al mensaje
+        return redirect()->route('pos.index')->with('success', '¡Venta registrada exitosamente! Total: $' . number_format($totalAmount, 2) . ' (' . ucfirst($paymentMethod) . ')');
     }
 }

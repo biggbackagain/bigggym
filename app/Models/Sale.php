@@ -10,11 +10,11 @@ class Sale extends Model
 {
     use HasFactory;
 
-    // Añadir los nuevos campos
     protected $fillable = [
         'total_amount',
         'payment_method',
         'payment_reference',
+        'user_id', // <-- AÑADIR ESTA LÍNEA
     ];
 
     /**
@@ -24,6 +24,6 @@ class Sale extends Model
     {
         return $this->belongsToMany(Product::class)
             ->withPivot('quantity', 'price_at_sale')
-            ->withTimestamps(); // Mantenemos timestamps en la tabla pivote
+            ->withTimestamps();
     }
 }

@@ -80,7 +80,6 @@
                                             <div class="flex items-center">
                                                 <div class="flex-shrink-0 h-10 w-10">
                                                     @if ($member->profile_photo_path)
-                                                        {{-- *** USA Storage::url() *** --}}
                                                         <img class="h-10 w-10 rounded-full object-cover" src="{{ Storage::url($member->profile_photo_path) }}" alt="Foto de perfil">
                                                     @else
                                                         <span class="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500">

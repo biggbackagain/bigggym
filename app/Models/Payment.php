@@ -5,32 +5,22 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasOne; // <-- AÑADIR IMPORT
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Payment extends Model
 {
     use HasFactory;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
         'member_id',
+        'user_id', // <-- AÑADIR ESTA LÍNEA
         'amount',
         'payment_date',
     ];
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
     protected $casts = [
         'payment_date' => 'datetime',
     ];
-
 
     /**
      * Un pago pertenece a un miembro.
@@ -43,7 +33,7 @@ class Payment extends Model
     /**
      * Un pago está asociado a una suscripción.
      */
-    public function subscription(): HasOne // <-- AÑADIR ESTA FUNCIÓN
+    public function subscription(): HasOne
     {
         return $this->hasOne(Subscription::class);
     }

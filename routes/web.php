@@ -14,6 +14,7 @@ use App\Http\Controllers\PosController;
 use App\Http\Controllers\SalesReportController;
 use App\Http\Controllers\CashMovementController;
 use App\Http\Controllers\BackupController;
+use App\Http\Controllers\MyReportController; // Incluye el controlador de "Mi Corte"
 // UserController ya no se usa
 
 /*
@@ -26,7 +27,7 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-// --- Rutas Protegidas (Requieren inicio de sesión, pero SIN permisos) ---
+// --- Rutas Protegidas (Requieren inicio de sesión, pero SIN permisos de rol) ---
 Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -66,9 +67,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('pos', [PosController::class, 'index'])->name('pos.index');
     Route::post('pos', [PosController::class, 'store'])->name('pos.store');
 
-    // Módulo de Reporte de Caja
+    // Módulo de Reporte de Caja (Final)
     Route::get('sales-report', [SalesReportController::class, 'index'])->name('sales.report');
     Route::post('sales-report/email', [SalesReportController::class, 'sendEmailReport'])->name('sales.report.email');
+
+    // Módulo de Mi Corte
+    Route::get('my-report', [MyReportController::class, 'index'])->name('my.report');
 
     // Rutas de Movimientos de Caja
     Route::get('cash-movements', [CashMovementController::class, 'index'])->name('cash.index');
@@ -80,10 +84,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/create', [BackupController::class, 'create'])->name('create');
         Route::get('/download/{filename}', [BackupController::class, 'download'])
             ->name('download')
-            ->where('filename', '.*'); // Permite slashes
+            ->where('filename', '.*');
         Route::delete('/delete/{filename}', [BackupController::class, 'delete'])
             ->name('delete')
-            ->where('filename', '.*'); // Permite slashes
+            ->where('filename', '.*');
     });
 
     // Rutas de Gestión de Usuarios ELIMINADAS

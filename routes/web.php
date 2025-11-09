@@ -14,8 +14,8 @@ use App\Http\Controllers\PosController;
 use App\Http\Controllers\SalesReportController;
 use App\Http\Controllers\CashMovementController;
 use App\Http\Controllers\BackupController;
-use App\Http\Controllers\MyReportController; // Incluye el controlador de "Mi Corte"
-// UserController ya no se usa
+use App\Http\Controllers\MyReportController;
+// No usamos UserController
 
 /*
 |--------------------------------------------------------------------------
@@ -27,7 +27,7 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-// --- Rutas Protegidas (Requieren inicio de sesión, pero SIN permisos de rol) ---
+// --- Rutas Protegidas (Requieren inicio de sesión) ---
 Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -67,6 +67,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('pos', [PosController::class, 'index'])->name('pos.index');
     Route::post('pos', [PosController::class, 'store'])->name('pos.store');
 
+    // --- RUTAS NUEVAS PARA TICKET/RECIBO ---
+    Route::get('pos/receipt/{sale}', [PosController::class, 'showReceipt'])->name('pos.receipt');
+    Route::post('pos/receipt/{sale}/email', [PosController::class, 'emailReceipt'])->name('pos.receipt.email');
+    // --- FIN RUTAS NUEVAS ---
+
     // Módulo de Reporte de Caja (Final)
     Route::get('sales-report', [SalesReportController::class, 'index'])->name('sales.report');
     Route::post('sales-report/email', [SalesReportController::class, 'sendEmailReport'])->name('sales.report.email');
@@ -89,8 +94,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->name('delete')
             ->where('filename', '.*');
     });
-
-    // Rutas de Gestión de Usuarios ELIMINADAS
 
 });
 

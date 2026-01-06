@@ -1,6 +1,9 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Cache; // <-- NECESARIO PARA LA PÁGINA DE BIENVENIDA
+use App\Models\Setting;               // <-- NECESARIO PARA LA PÁGINA DE BIENVENIDA
+
 use App\Http\Controllers\MemberController;
 use App\Http\Controllers\CheckInController;
 use App\Http\Controllers\MembershipTypeController;
@@ -15,7 +18,7 @@ use App\Http\Controllers\SalesReportController;
 use App\Http\Controllers\CashMovementController;
 use App\Http\Controllers\BackupController;
 use App\Http\Controllers\MyReportController;
-use App\Http\Controllers\SalesController; // <-- Historial de Ventas
+use App\Http\Controllers\SalesController; 
 
 /*
 |--------------------------------------------------------------------------
@@ -23,11 +26,19 @@ use App\Http\Controllers\SalesController; // <-- Historial de Ventas
 |--------------------------------------------------------------------------
 */
 
+// --- RUTA PÚBLICA (LANDING PAGE DINÁMICA) ---
 Route::get('/', function () {
-    return view('welcome');
+    // 1. Intentamos obtener el nombre desde la caché global
+    // 2. Si no, buscamos en la BD
+    // 3. Si no, usamos el valor por defecto
+    $gymName = Cache::get('global_settings')['gym_name'] 
+               ?? Setting::where('key', 'gym_name')->value('value') 
+               ?? config('app.name', 'BiggGym');
+
+    return view('welcome', compact('gymName'));
 });
 
-// --- Rutas Protegidas (Requieren inicio de sesión, sin permisos) ---
+// --- Rutas Protegidas (Requieren inicio de sesión) ---
 Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -68,7 +79,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('pos', [PosController::class, 'store'])->name('pos.store');
 
     // --- RUTAS DE HISTORIAL Y TICKET ---
-    Route::get('pos/receipt/{sale}', [PosController::class, 'showReceipt'])->name('pos.receipt'); // <-- RUTA DEL TICKET
+    Route::get('pos/receipt/{sale}', [PosController::class, 'showReceipt'])->name('pos.receipt');
     Route::post('pos/receipt/{sale}/email', [PosController::class, 'emailReceipt'])->name('pos.receipt.email');
 
     // Módulo de Historial de Ventas (CRUD para LISTAR/CANCELAR)
@@ -97,8 +108,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->name('delete')
             ->where('filename', '.*');
     });
-
-    // Rutas de Gestión de Usuarios (ELIMINADAS)
 
 });
 

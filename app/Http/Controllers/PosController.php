@@ -23,11 +23,26 @@ class PosController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Product::query()->where('is_active', true)->where('stock', '>', 0);
+        // 1. Iniciar consulta base (Solo activos y con stock)
+        $query = Product::query()
+            ->where('is_active', true)
+            ->where('stock', '>', 0);
 
-        if ($request->filled('search')) { /* ... */ }
+        // 2. Lógica de Búsqueda (CORREGIDA)
+        if ($request->filled('search')) {
+            $search = $request->input('search');
 
+            // Usamos un grupo (closure) para que el OR no anule el filtro de stock/activo
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'LIKE', "%{$search}%")
+                  ->orWhere('sku', 'LIKE', "%{$search}%"); 
+                  // NOTA: Si en tu base de datos la columna del código es 'barcode' o 'code', cambia 'sku' aquí.
+            });
+        }
+
+        // 3. Obtener resultados ordenados
         $products = $query->orderBy('name')->get();
+
         return view('pos.index', compact('products'));
     }
 
@@ -55,6 +70,7 @@ class PosController extends Controller
             DB::transaction(function () use ($cartItems, $paymentMethod, $paymentReference, &$totalAmount, &$pivotData, &$sale) {
 
                 foreach ($cartItems as $item) {
+                    // Usamos lockForUpdate para evitar condiciones de carrera en el stock
                     $product = Product::lockForUpdate()->find($item['id']);
                     $quantity = $item['quantity'];
 
@@ -65,6 +81,7 @@ class PosController extends Controller
                     $product->decrement('stock', $quantity);
                     $itemTotal = $product->price * $quantity;
                     $totalAmount += $itemTotal;
+                    
                     $pivotData[$product->id] = [
                         'quantity' => $quantity,
                         'price_at_sale' => $product->price
@@ -79,7 +96,7 @@ class PosController extends Controller
                     'payment_reference' => $paymentReference,
                 ]);
 
-                // Adjuntar productos
+                // Adjuntar productos a la venta
                 $sale->products()->attach($pivotData);
             });
 
@@ -113,11 +130,14 @@ class PosController extends Controller
         $sale->load('products');
 
         try {
-            $mailSettings = Cache::remember('mail_settings', 60*60, function () { return Setting::where('key', 'like', 'mail_%')->pluck('value', 'key'); });
+            // Obtenemos configuración dinámica de correo (para no depender solo del .env)
+            $mailSettings = Cache::remember('mail_settings', 60*60, function () { 
+                return Setting::where('key', 'like', 'mail_%')->pluck('value', 'key'); 
+            });
             $globalSettings = Cache::get('global_settings');
 
             if (empty($mailSettings->get('mail_username')) || empty($mailSettings->get('mail_password'))) {
-                return back()->with('error', 'Error: La configuración de correo no está completa.');
+                return back()->with('error', 'Error: La configuración de correo no está completa en Ajustes.');
             }
             
             $mailConfig = [
@@ -129,10 +149,11 @@ class PosController extends Controller
                 'password' => $mailSettings->get('mail_password'),
                 'timeout' => null,
             ];
+            
             $fromAddress = $mailSettings->get('mail_from_address');
             $fromName = $mailSettings->get('mail_from_name') ?? $globalSettings->get('gym_name', config('app.name'));
 
-            $mailer = app()->makeWith('mailer', ['name' => 'receipt_smtp']);
+            // Configurar mailer al vuelo
             $transport = app('mail.manager')->createSymfonyTransport($mailConfig);
             $dynamicMailer = new Mailer('receipt_smtp', app('view'), $transport, app('events'));
             $dynamicMailer->alwaysFrom($fromAddress, $fromName);

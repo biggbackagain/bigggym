@@ -10,50 +10,22 @@ class Subscription extends Model
 {
     use HasFactory;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
         'member_id',
         'membership_type_id',
         'payment_id',
         'start_date',
         'end_date',
+        'payment_method',
+        'payment_reference', // <--- AGREGADO
     ];
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
     protected $casts = [
         'start_date' => 'datetime',
         'end_date' => 'datetime',
     ];
 
-    /**
-     * Una suscripción pertenece a un miembro.
-     */
-    public function member(): BelongsTo
-    {
-        return $this->belongsTo(Member::class);
-    }
-
-    /**
-     * Una suscripción pertenece a un tipo de membresía.
-     */
-    public function membershipType(): BelongsTo
-    {
-        return $this->belongsTo(MembershipType::class);
-    }
-
-    /**
-     * Una suscripción pertenece a un pago.
-     */
-    public function payment(): BelongsTo
-    {
-        return $this->belongsTo(Payment::class);
-    }
+    public function member(): BelongsTo { return $this->belongsTo(Member::class); }
+    public function membershipType(): BelongsTo { return $this->belongsTo(MembershipType::class); }
+    public function payment(): BelongsTo { return $this->belongsTo(Payment::class); }
 }

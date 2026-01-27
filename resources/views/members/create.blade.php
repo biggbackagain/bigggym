@@ -44,17 +44,33 @@
                             </label>
                         </div>
 
+                        <hr class="my-6">
+
+                        {{-- SECCIÓN DE MEMBRESÍA Y PAGO --}}
                         <div class="mt-4">
                             <x-input-label for="membership_type_id" :value="__('Asignar Membresía (Opcional)')" />
                             <select name="membership_type_id" id="membership_type_id" class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
                                 <option value="">-- No asignar membresía ahora --</option>
                                 @foreach ($membershipTypes as $type)
-                                    <option value="{{ $type->id }}">
-                                        {{ $type->name }}
-                                    </option>
+                                    <option value="{{ $type->id }}">{{ $type->name }}</option>
                                 @endforeach
                             </select>
-                            <x-input-error :messages="$errors->get('membership_type_id')" class="mt-2" />
+                        </div>
+
+                        {{-- FORMA DE PAGO --}}
+                        <div class="mt-4">
+                            <x-input-label for="payment_method" :value="__('Forma de Pago')" />
+                            <select name="payment_method" id="payment_method" onchange="toggleReferenceField()" class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                <option value="Efectivo">Efectivo</option>
+                                <option value="Tarjeta">Tarjeta (Débito/Crédito)</option>
+                                <option value="Transferencia">Transferencia / SPEI</option>
+                            </select>
+                        </div>
+
+                        {{-- REFERENCIA (Dinámica) --}}
+                        <div id="reference_container" class="mt-4 hidden">
+                            <x-input-label for="payment_reference" :value="__('Referencia / Folio / Últimos 4 dígitos')" />
+                            <x-text-input id="payment_reference" name="payment_reference" type="text" class="block mt-1 w-full" placeholder="Ej: Folio 8821 o Tarjeta 4421" />
                         </div>
 
                         <div class="flex items-center justify-end mt-4">
@@ -67,4 +83,17 @@
             </div>
         </div>
     </div>
+
+    <script>
+        function toggleReferenceField() {
+            const method = document.getElementById('payment_method').value;
+            const container = document.getElementById('reference_container');
+            if (method === 'Tarjeta' || method === 'Transferencia') {
+                container.classList.remove('hidden');
+            } else {
+                container.classList.add('hidden');
+                document.getElementById('payment_reference').value = '';
+            }
+        }
+    </script>
 </x-app-layout>

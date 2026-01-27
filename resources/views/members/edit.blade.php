@@ -69,3 +69,10 @@
         </div>
     </div>
 </x-app-layout>
+@if(session('print_receipt'))
+    <script>
+        if(confirm('¿Deseas imprimir el recibo de pago?')) {
+            window.open("{{ route('members.receipt', session('print_receipt')) }}", '_blank');
+        }
+    </script>
+@endif

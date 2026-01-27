@@ -13,13 +13,10 @@ class Payment extends Model
 
     protected $fillable = [
         'member_id',
-        'user_id', // <-- Campo para seguir quién registró el pago
+        'user_id',
         'amount',
         'payment_date',
-    ];
-
-    protected $casts = [
-        'payment_date' => 'datetime',
+        'notes'
     ];
 
     /**
@@ -31,10 +28,18 @@ class Payment extends Model
     }
 
     /**
-     * Un pago está asociado a una suscripción.
+     * Un pago tiene una suscripción asociada (donde guardamos el método).
      */
     public function subscription(): HasOne
     {
         return $this->hasOne(Subscription::class);
+    }
+
+    /**
+     * Un pago fue registrado por un usuario (empleado/admin).
+     */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 }

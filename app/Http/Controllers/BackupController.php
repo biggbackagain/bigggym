@@ -5,17 +5,17 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\File;
 use Exception;
-use Carbon\Carbon; // Importar Carbon
-use Illuminate\Support\Facades\Log; // Importar Log
+use Carbon\Carbon;
+use ZipArchive; 
 
 class BackupController extends Controller
 {
-    private $diskName = 'backups_local'; // El disco que definimos en filesystems.php
+    private $diskName = 'backups_local'; 
 
-    /**
-     * Muestra la lista de backups existentes.
-     */
     public function index()
     {
         $disk = Storage::disk($this->diskName);
@@ -24,7 +24,6 @@ class BackupController extends Controller
             $disk->makeDirectory('');
         }
         
-        // Usar allFiles() para buscar en subcarpetas
         $files = $disk->allFiles();
 
         $backups = collect($files)
@@ -33,10 +32,10 @@ class BackupController extends Controller
             })
             ->map(function ($file) use ($disk) {
                 return [
-                    'name' => $file, // El 'name' ahora incluye la ruta (ej: 'Laravel/backup.zip')
+                    'name' => $file,
                     'size' => $this->formatBytes($disk->size($file)),
                     'date' => Carbon::createFromTimestamp($disk->lastModified($file))
-                                    ->tz(config('app.timezone')), // Corregido con zona horaria
+                                    ->tz(config('app.timezone')),
                 ];
             })
             ->sortByDesc('date')
@@ -45,40 +44,52 @@ class BackupController extends Controller
         return view('backups.index', compact('backups'));
     }
 
-    /**
-     * Inicia un nuevo backup.
-     */
     public function create()
     {
         try {
-            Log::info('[BackupController] Iniciando backup...');
-            
+            Log::info('[BackupController] Iniciando backup manual...');
             $exitCode = Artisan::call('backup:run', ['--only-files' => false, '--only-db' => false]);
             
             if ($exitCode === 0) {
                 Log::info('[BackupController] Backup creado exitosamente.');
-                Artisan::call('backup:clean');
-                Log::info('[BackupController] Limpieza de backups viejos ejecutada.');
-                
+                Artisan::call('backup:clean'); 
                 return redirect()->route('backups.index')->with('success', '¡Nuevo backup creado exitosamente!');
             } else {
-                Log::error('[BackupController] Artisan::call(backup:run) falló con código: ' . $exitCode);
                 $output = Artisan::output();
-                Log::error('[BackupController] Output del error: ' . $output);
-                return redirect()->route('backups.index')->with('error', 'Error al crear el backup. Revisa los logs. Output: ' . $output);
+                Log::error('[BackupController] Error al crear backup: ' . $output);
+                return redirect()->route('backups.index')->with('error', 'Error al crear el backup. Revisa los logs.');
             }
 
         } catch (Exception $e) {
             report($e);
-            Log::error('[BackupController] Excepción capturada: ' . $e->getMessage());
-            return redirect()->route('backups.index')->with('error', 'Error al crear el backup: ' . $e->getMessage());
+            return redirect()->route('backups.index')->with('error', 'Error crítico: ' . $e->getMessage());
         }
     }
 
     /**
-     * Descarga un archivo de backup.
-     * $filename ahora puede contener slashes (ej: 'Laravel/backup.zip')
+     * IMPORTAR UN BACKUP EXTERNO
      */
+    public function upload(Request $request)
+    {
+        $request->validate([
+            'backup_file' => 'required|file|mimes:zip|max:512000', // Máx 500MB (ajusta si necesitas más)
+        ]);
+
+        try {
+            $file = $request->file('backup_file');
+            $filename = $file->getClientOriginalName(); // Usamos el nombre original
+
+            // Guardamos el archivo en el disco de backups
+            Storage::disk($this->diskName)->putFileAs('', $file, $filename);
+
+            return redirect()->route('backups.index')->with('success', 'Backup importado correctamente. Ahora puedes restaurarlo desde la lista.');
+
+        } catch (Exception $e) {
+            Log::error("Error subiendo backup: " . $e->getMessage());
+            return redirect()->route('backups.index')->with('error', 'Error al subir el archivo: ' . $e->getMessage());
+        }
+    }
+
     public function download($filename)
     {
         if (!Storage::disk($this->diskName)->exists($filename)) {
@@ -88,10 +99,6 @@ class BackupController extends Controller
         return Storage::disk($this->diskName)->download($filename);
     }
 
-    /**
-     * Elimina un archivo de backup.
-     * $filename ahora puede contener slashes (ej: 'Laravel/backup.zip')
-     */
     public function delete($filename)
     {
         $disk = Storage::disk($this->diskName);
@@ -104,9 +111,64 @@ class BackupController extends Controller
         return redirect()->route('backups.index')->with('error', 'El archivo no existe.');
     }
 
-    /**
-     * Helper para formatear bytes a KB/MB/GB.
-     */
+    public function restore($filename)
+    {
+        $disk = Storage::disk($this->diskName);
+
+        if (!$disk->exists($filename)) {
+            return redirect()->route('backups.index')->with('error', 'El archivo de respaldo no existe.');
+        }
+
+        $fullPath = $disk->path($filename); 
+        $tempDir = storage_path('app/backup-temp/' . now()->timestamp); 
+
+        try {
+            set_time_limit(300); 
+
+            $zip = new ZipArchive;
+            if ($zip->open($fullPath) === TRUE) {
+                $zip->extractTo($tempDir);
+                $zip->close();
+            } else {
+                return redirect()->route('backups.index')->with('error', 'No se pudo abrir el archivo ZIP.');
+            }
+
+            $sqlFiles = File::allFiles($tempDir);
+            $sqlFileToRestore = null;
+
+            foreach ($sqlFiles as $file) {
+                if ($file->getExtension() === 'sql') {
+                    $sqlFileToRestore = $file->getRealPath();
+                    break;
+                }
+            }
+
+            if (!$sqlFileToRestore) {
+                File::deleteDirectory($tempDir); 
+                return redirect()->route('backups.index')->with('error', 'El respaldo no contiene un archivo SQL válido.');
+            }
+
+            DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+            $sql = file_get_contents($sqlFileToRestore);
+            DB::unprepared($sql);
+            DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+
+            File::deleteDirectory($tempDir);
+
+            Log::info("[BackupController] Restauración exitosa desde: {$filename}");
+
+            return redirect()->route('backups.index')->with('success', '¡Sistema restaurado exitosamente! Por favor, verifica los datos.');
+
+        } catch (Exception $e) {
+            if (File::isDirectory($tempDir)) {
+                File::deleteDirectory($tempDir);
+            }
+            DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+            Log::error("[BackupController] Fallo en restauración: " . $e->getMessage());
+            return redirect()->route('backups.index')->with('error', 'Error crítico al restaurar: ' . $e->getMessage());
+        }
+    }
+
     private function formatBytes($bytes, $precision = 2)
     {
         $units = ['B', 'KB', 'MB', 'GB', 'TB'];

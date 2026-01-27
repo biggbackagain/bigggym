@@ -10,13 +10,13 @@
         </h2>
     </x-slot>
 
-    <div class="py-12 print:py-4"> {{-- Reducir padding en impresión --}}
+    <div class="py-12 print:py-4">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 print:max-w-full print:px-0">
 
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-4 print:hidden"> {{-- Ocultar en impresión --}}
+            {{-- Filtros y Acciones (Ocultos al imprimir) --}}
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-4 print:hidden">
                 <div class="p-6">
                     <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
-                        {{-- Filtro de Rango de Fechas --}}
                         <form method="GET" action="{{ route('sales.report') }}" class="flex flex-wrap items-center gap-2">
                             <div>
                                 <x-input-label for="start_date" :value="__('Fecha Inicio:')" class="text-sm" />
@@ -30,33 +30,19 @@
                                 <x-primary-button>Filtrar</x-primary-button>
                                 <a href="{{ route('sales.report') }}" class="ms-2 text-sm text-gray-500 hover:underline whitespace-nowrap">Ver Hoy</a>
                             </div>
-                             @error('end_date')
-                                <p class="text-xs text-red-600 col-span-full">{{ $message }}</p>
-                            @enderror
-                            @error('start_date')
-                                <p class="text-xs text-red-600 col-span-full">{{ $message }}</p>
-                             @enderror
                         </form>
 
-                        <div class="flex gap-2 self-end mt-2 sm:mt-0"> {{-- Contenedor para botones --}}
-                            {{-- Botón Enviar por Correo --}}
-                            <form method="POST" action="{{ route('sales.report.email') }}" onsubmit="return confirm('¿Enviar este reporte por correo a {{ $globalSettings['report_recipient_email'] ?? 'la dirección configurada' }}?');">
+                        <div class="flex gap-2 self-end mt-2 sm:mt-0">
+                            <form method="POST" action="{{ route('sales.report.email') }}" onsubmit="return confirm('¿Enviar reporte por correo?');">
                                 @csrf
                                 <input type="hidden" name="start_date" value="{{ $startDate->format('Y-m-d') }}">
                                 <input type="hidden" name="end_date" value="{{ $endDate->format('Y-m-d') }}">
-                                <button type="submit" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 active:bg-blue-900 focus:outline-none focus:border-blue-900 focus:ring ring-blue-300 disabled:opacity-50 transition ease-in-out duration-150"
-                                    @empty($globalSettings['report_recipient_email'])
-                                        disabled
-                                        title="Configura un correo destino en Ajustes para habilitar esta opción."
-                                    @endempty>
-                                    <svg class="w-4 h-4 me-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">...</svg>
+                                <button type="submit" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md font-semibold text-xs uppercase tracking-widest hover:bg-blue-700">
                                     Enviar por Correo
                                 </button>
                             </form>
 
-                            {{-- Botón Imprimir --}}
-                            <button onclick="window.print()" class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 active:bg-gray-900 focus:outline-none focus:border-gray-900 focus:ring ring-gray-300 disabled:opacity-25 transition ease-in-out duration-150">
-                                <svg class="w-4 h-4 me-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">...</svg>
+                            <button onclick="window.print()" class="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-md font-semibold text-xs uppercase tracking-widest hover:bg-gray-700">
                                 Imprimir / PDF
                             </button>
                         </div>
@@ -64,103 +50,89 @@
                 </div>
             </div>
 
-             {{-- Título Visible Solo en Impresión --}}
+             {{-- Encabezado Solo Impresión --}}
             <div class="hidden print:block mb-4 text-center">
-                <h1 class="text-xl font-bold">
-                     @if($startDate->isSameDay($endDate))
-                        Reporte de Caja - {{ $startDate->format('d/m/Y') }}
-                    @else
-                        Reporte de Caja - {{ $startDate->format('d/m/Y') }} al {{ $endDate->format('d/m/Y') }}
-                    @endif
-                </h1>
-                @isset($globalSettings['gym_name'])
-                 <p class="text-lg">{{ $globalSettings['gym_name'] }}</p>
-                @endisset
+                <h1 class="text-xl font-bold">Reporte de Caja - {{ $startDate->format('d/m/Y') }} @if(!$startDate->isSameDay($endDate)) al {{ $endDate->format('d/m/Y') }} @endif</h1>
+                <p class="text-lg">{{ $globalSettings['gym_name'] ?? config('app.name') }}</p>
             </div>
 
+            {{-- RESUMEN POR MÉTODO DE PAGO (SOLO MEMBRESÍAS) --}}
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 print:grid-cols-3 print:mb-4">
+                <div class="bg-green-50 border-l-4 border-green-500 p-4 rounded shadow-sm">
+                    <p class="text-xs font-bold text-green-700 uppercase">Efectivo Membresías</p>
+                    {{-- Usamos $methodTotals si está disponible, si no, calculamos en la vista --}}
+                    <p class="text-xl font-bold text-green-900">${{ number_format($methodTotals['Efectivo'] ?? $membershipPayments->where('subscription.payment_method', 'Efectivo')->sum('amount'), 2) }}</p>
+                </div>
+                <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded shadow-sm">
+                    <p class="text-xs font-bold text-blue-700 uppercase">Tarjeta Membresías</p>
+                    <p class="text-xl font-bold text-blue-900">${{ number_format($methodTotals['Tarjeta'] ?? $membershipPayments->where('subscription.payment_method', 'Tarjeta')->sum('amount'), 2) }}</p>
+                </div>
+                <div class="bg-purple-50 border-l-4 border-purple-500 p-4 rounded shadow-sm">
+                    <p class="text-xs font-bold text-purple-700 uppercase">Transferencia Membresías</p>
+                    <p class="text-xl font-bold text-purple-900">${{ number_format($methodTotals['Transferencia'] ?? $membershipPayments->where('subscription.payment_method', 'Transferencia')->sum('amount'), 2) }}</p>
+                </div>
+            </div>
+
+            {{-- Tarjetas de Totales Generales --}}
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6 print:grid-cols-4 print:gap-4">
-                {{-- Total Productos --}}
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg print:border print:border-gray-300 print:shadow-none">
-                     <div class="p-6 print:p-2 text-gray-900">
-                        <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider print:text-xs">Ingreso Productos</h3>
-                        <p class="text-3xl font-bold text-green-600 print:text-xl">${{ number_format($totalProductSalesAmount, 2) }}</p>
-                        <p class="text-xs text-gray-500 print:text-xxs">({{ $totalProductSalesCount }} ventas)</p>
+                <div class="bg-white shadow-sm sm:rounded-lg border print:shadow-none">
+                     <div class="p-6 print:p-2">
+                        <h3 class="text-xs font-medium text-gray-500 uppercase">Ingreso Productos</h3>
+                        <p class="text-2xl font-bold text-green-600">${{ number_format($totalProductSalesAmount, 2) }}</p>
                     </div>
                 </div>
-                 {{-- Total Membresías --}}
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg print:border print:border-gray-300 print:shadow-none">
-                     <div class="p-6 print:p-2 text-gray-900">
-                        <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider print:text-xs">Ingreso Membresías</h3>
-                        <p class="text-3xl font-bold text-blue-600 print:text-xl">${{ number_format($totalMembershipPaymentsAmount, 2) }}</p>
-                         <p class="text-xs text-gray-500 print:text-xxs">({{ $totalMembershipPaymentsCount }} pagos)</p>
+                <div class="bg-white shadow-sm sm:rounded-lg border print:shadow-none">
+                     <div class="p-6 print:p-2">
+                        <h3 class="text-xs font-medium text-gray-500 uppercase">Ingreso Membresías</h3>
+                        <p class="text-2xl font-bold text-blue-600">${{ number_format($totalMembershipPaymentsAmount, 2) }}</p>
                     </div>
                 </div>
-                {{-- Neto Movimientos Caja --}}
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg print:border print:border-gray-300 print:shadow-none">
-                    <div class="p-6 print:p-2 text-gray-900">
-                        <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider print:text-xs">Neto Mov. Caja</h3>
-                        <p class="text-3xl font-bold {{ $netCashMovement >= 0 ? 'text-green-600' : 'text-red-600' }} print:text-xl">
+                <div class="bg-white shadow-sm sm:rounded-lg border print:shadow-none">
+                    <div class="p-6 print:p-2">
+                        <h3 class="text-xs font-medium text-gray-500 uppercase">Neto Mov. Caja</h3>
+                        <p class="text-2xl font-bold {{ $netCashMovement >= 0 ? 'text-green-600' : 'text-red-600' }}">
                             ${{ number_format($netCashMovement, 2) }}
                         </p>
-                        <p class="text-xs text-gray-500 print:text-xxs">
-                           (+) ${{ number_format($totalCashEntries, 2) }} / (-) ${{ number_format($totalCashExits, 2) }}
-                        </p>
                     </div>
                 </div>
-                {{-- TOTAL GENERAL DE CAJA --}}
-                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg border-2 border-indigo-600 print:border print:border-gray-300 print:shadow-none">
-                    <div class="p-6 print:p-2 text-gray-900">
-                        <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider print:text-xs">Saldo Final en Caja</h3>
-                        <p class="text-3xl font-bold text-indigo-700 print:text-xl">${{ number_format($grandTotal, 2) }}</p>
+                 <div class="bg-white shadow-sm sm:rounded-lg border-2 border-indigo-600 print:shadow-none">
+                    <div class="p-6 print:p-2">
+                        <h3 class="text-xs font-medium text-gray-500 uppercase">Saldo Final Caja</h3>
+                        <p class="text-2xl font-bold text-indigo-700">${{ number_format($grandTotal, 2) }}</p>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6 print:shadow-none print:border print:border-gray-300 print:mb-4">
-                <div class="p-6 print:p-2 text-gray-900">
-                    <h3 class="text-lg font-medium text-gray-900 mb-4 print:text-base print:mb-2">
-                        Detalle: Ventas de Productos
-                    </h3>
+            {{-- DETALLE VENTAS PRODUCTOS --}}
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6 border print:shadow-none print:mb-4">
+                <div class="p-6 print:p-2">
+                    <h3 class="text-lg font-medium mb-4 print:text-base print:mb-2">Detalle: Ventas de Productos</h3>
                     <div class="overflow-x-auto">
-                         <table class="min-w-full divide-y divide-gray-200 print:divide-none">
-                            <thead class="bg-gray-50 print:bg-transparent">
+                         <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
                                 <tr>
-                                    {{-- Encabezados con Método Pago y Referencia --}}
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider print:px-1 print:py-1">ID/Hora</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider print:px-1 print:py-1">Productos</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider print:px-1 print:py-1">Método Pago</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider print:px-1 print:py-1">Referencia</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider print:px-1 print:py-1">Total</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase print:px-1">ID/Hora</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase print:px-1">Productos</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase print:px-1">Método</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase print:px-1">Referencia</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase print:px-1 text-right">Total</th>
                                 </tr>
                             </thead>
-                            <tbody class="bg-white divide-y divide-gray-200 print:divide-none">
+                            <tbody class="bg-white divide-y divide-gray-200">
                                 @forelse ($productSales as $sale)
-                                    <tr class="print:border-b print:border-gray-200">
-                                        {{-- ID y Hora --}}
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 print:px-1 print:py-1">
-                                            <div>#P{{ $sale->id }}</div>
-                                            <div>{{ $sale->created_at->format('h:i A') }}</div>
+                                    <tr>
+                                        <td class="px-6 py-4 text-sm text-gray-500 print:px-1">#P{{ $sale->id }} <br> {{ $sale->created_at->format('h:i A') }}</td>
+                                        <td class="px-6 py-4 text-sm text-gray-900 print:px-1">
+                                            @foreach ($sale->products as $product)
+                                                <div>({{ $product->pivot->quantity }}x) {{ $product->name }}</div>
+                                            @endforeach
                                         </td>
-                                        {{-- Productos --}}
-                                        <td class="px-6 py-4 text-sm text-gray-900 print:px-1 print:py-1 print:whitespace-normal">
-                                            <ul class="list-none print:pl-0">
-                                                @foreach ($sale->products as $product)
-                                                    <li>({{ $product->pivot->quantity }}x) {{ $product->name }} <span class="text-xs text-gray-500">(${{ number_format($product->pivot->price_at_sale, 2) }} c/u)</span></li>
-                                                @endforeach
-                                            </ul>
-                                        </td>
-                                         {{-- Método Pago y Referencia --}}
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 print:px-1 print:py-1">
-                                            {{ ucfirst($sale->payment_method) }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 print:px-1 print:py-1">
-                                            {{ $sale->payment_reference ?? '--' }}
-                                        </td>
-                                        {{-- Total --}}
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 print:px-1 print:py-1">${{ number_format($sale->total_amount, 2) }}</td>
+                                        <td class="px-6 py-4 text-sm print:px-1">{{ ucfirst($sale->payment_method) }}</td>
+                                        <td class="px-6 py-4 text-sm font-mono print:px-1">{{ $sale->payment_reference ?? '--' }}</td>
+                                        <td class="px-6 py-4 text-sm font-bold text-right print:px-1">${{ number_format($sale->total_amount, 2) }}</td>
                                     </tr>
                                 @empty
-                                    <tr> <td colspan="5" class="px-6 py-4 whitespace-nowrap text-center text-gray-500 print:px-1 print:py-1">No se registraron ventas de productos.</td> </tr> {{-- colspan="5" --}}
+                                    <tr> <td colspan="5" class="px-6 py-4 text-center text-gray-500">Sin ventas.</td> </tr>
                                 @endforelse
                             </tbody>
                         </table>
@@ -168,37 +140,47 @@
                 </div>
             </div>
 
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6 print:shadow-none print:border print:border-gray-300 print:mb-4">
-                <div class="p-6 print:p-2 text-gray-900">
-                    <h3 class="text-lg font-medium text-gray-900 mb-4 print:text-base print:mb-2">
-                        Detalle: Pagos de Membresías
-                    </h3>
+            {{-- DETALLE PAGOS MEMBRESÍAS --}}
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6 border print:shadow-none print:mb-4">
+                <div class="p-6 print:p-2">
+                    <h3 class="text-lg font-medium mb-4 print:text-base print:mb-2">Detalle: Pagos de Membresías</h3>
                      <div class="overflow-x-auto">
-                         <table class="min-w-full divide-y divide-gray-200 print:divide-none">
-                            <thead class="bg-gray-50 print:bg-transparent">
+                         <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
                                 <tr>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider print:px-1 print:py-1">ID Pago</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider print:px-1 print:py-1">Hora</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider print:px-1 print:py-1">Miembro</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider print:px-1 print:py-1">Plan</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider print:px-1 print:py-1">Monto</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase print:px-1">ID Pago</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase print:px-1">Hora</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase print:px-1">Miembro</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase print:px-1">Plan</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase print:px-1">Método</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase print:px-1">Referencia</th> {{-- COLUMNA AGREGADA --}}
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase print:px-1">Monto</th>
                                 </tr>
                             </thead>
-                            <tbody class="bg-white divide-y divide-gray-200 print:divide-none">
+                            <tbody class="bg-white divide-y divide-gray-200">
                                 @forelse ($membershipPayments as $payment)
-                                     <tr class="print:border-b print:border-gray-200">
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 print:px-1 print:py-1">#M{{ $payment->id }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 print:px-1 print:py-1">{{ $payment->created_at->format('h:i A') }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 print:px-1 print:py-1">
-                                            {{ $payment->member?->name ?? 'N/A' }} <span class="text-xs text-gray-500">({{ $payment->member?->member_code ?? 'N/A' }})</span>
+                                     <tr>
+                                        <td class="px-6 py-4 text-sm text-gray-500 print:px-1">#M{{ $payment->id }}</td>
+                                        <td class="px-6 py-4 text-sm text-gray-500 print:px-1">{{ $payment->created_at->format('h:i A') }}</td>
+                                        <td class="px-6 py-4 text-sm print:px-1">
+                                            {{ $payment->member?->name ?? 'N/A' }}
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 print:px-1 print:py-1">
+                                        <td class="px-6 py-4 text-sm print:px-1">
                                             {{ $payment->subscription?->membershipType?->name ?? 'N/A' }}
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 print:px-1 print:py-1">${{ number_format($payment->amount, 2) }}</td>
+                                        <td class="px-6 py-4 text-sm print:px-1">
+                                            {{ ucfirst($payment->subscription?->payment_method ?? 'Efectivo') }}
+                                        </td>
+                                        
+                                        {{-- CELDA REFERENCIA AGREGADA --}}
+                                        <td class="px-6 py-4 text-sm font-mono text-blue-700 print:px-1">
+                                            {{ $payment->subscription?->payment_reference ?? '--' }}
+                                        </td>
+
+                                        <td class="px-6 py-4 text-sm font-bold text-right print:px-1">${{ number_format($payment->amount, 2) }}</td>
                                     </tr>
                                 @empty
-                                     <tr> <td colspan="5" class="px-6 py-4 whitespace-nowrap text-center text-gray-500 print:px-1 print:py-1">No se registraron pagos de membresías.</td> </tr>
+                                     <tr> <td colspan="7" class="px-6 py-4 text-center text-gray-500">Sin pagos.</td> </tr>
                                 @endforelse
                             </tbody>
                         </table>
@@ -206,46 +188,41 @@
                 </div>
             </div>
 
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg print:shadow-none print:border print:border-gray-300">
-                 <div class="p-6 print:p-2 text-gray-900">
-                     <h3 class="text-lg font-medium text-gray-900 mb-4 print:text-base print:mb-2">
-                        Detalle: Otros Movimientos de Caja
-                    </h3>
+            {{-- OTROS MOVIMIENTOS --}}
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg border print:shadow-none">
+                 <div class="p-6 print:p-2">
+                     <h3 class="text-lg font-medium mb-4 print:text-base print:mb-2">Otros Movimientos</h3>
                      <div class="overflow-x-auto">
-                         <table class="min-w-full divide-y divide-gray-200 print:divide-none">
-                            <thead class="bg-gray-50 print:bg-transparent">
+                         <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
                                 <tr>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider print:px-1 print:py-1">Hora</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider print:px-1 print:py-1">Tipo</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider print:px-1 print:py-1">Monto</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider print:px-1 print:py-1">Descripción</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider print:px-1 print:py-1">Registrado por</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase print:px-1">Hora</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase print:px-1">Tipo</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase print:px-1">Monto</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase print:px-1">Descripción</th>
                                 </tr>
                             </thead>
-                            <tbody class="bg-white divide-y divide-gray-200 print:divide-none">
+                            <tbody class="bg-white divide-y divide-gray-200">
                                 @forelse ($cashMovements as $movement)
-                                    <tr class="print:border-b print:border-gray-200">
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 print:px-1 print:py-1">{{ $movement->created_at->format('h:i A') }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm print:px-1 print:py-1">
-                                            @if($movement->type == 'entry')
-                                                <span class="font-semibold text-green-600">Entrada</span>
-                                            @else
-                                                <span class="font-semibold text-red-600">Salida</span>
-                                            @endif
+                                    <tr>
+                                        <td class="px-6 py-4 text-sm text-gray-500 print:px-1">{{ $movement->created_at->format('h:i A') }}</td>
+                                        <td class="px-6 py-4 text-sm print:px-1 font-bold {{ $movement->type == 'entry' ? 'text-green-600' : 'text-red-600' }}">
+                                            {{ $movement->type == 'entry' ? 'Entrada' : 'Salida' }}
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium {{ $movement->type == 'entry' ? 'text-green-600' : 'text-red-600' }} print:px-1 print:py-1">
-                                            ${{ number_format($movement->amount, 2) }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 print:px-1 print:py-1">{{ $movement->description }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 print:px-1 print:py-1">{{ $movement->user?->name ?? 'N/A' }}</td>
+                                        <td class="px-6 py-4 text-sm font-bold print:px-1">${{ number_format($movement->amount, 2) }}</td>
+                                        <td class="px-6 py-4 text-sm print:px-1">{{ $movement->description }}</td>
                                     </tr>
                                 @empty
-                                     <tr> <td colspan="5" class="px-6 py-4 whitespace-nowrap text-center text-gray-500 print:px-1 print:py-1">No se registraron otros movimientos de caja.</td> </tr>
+                                     <tr> <td colspan="4" class="px-6 py-4 text-center text-gray-500">Sin movimientos.</td> </tr>
                                 @endforelse
                             </tbody>
                         </table>
                     </div>
                  </div>
+            </div>
+            
+            <div class="hidden print:block text-center mt-8 text-xs text-gray-400">
+                Generado por BiggGym System - {{ now()->format('d/m/Y H:i') }}
             </div>
 
         </div>

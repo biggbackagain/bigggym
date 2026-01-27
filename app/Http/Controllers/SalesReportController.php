@@ -7,7 +7,7 @@ use App\Models\Sale;
 use App\Models\Payment;
 use App\Models\CashMovement;
 use App\Models\Setting;
-use Carbon\Carbon; // <-- Asegúrate que Carbon esté importado
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Cache;
 use App\Mail\SalesReportMail;
@@ -19,8 +19,6 @@ class SalesReportController extends Controller
 {
     /**
      * Muestra el reporte de caja (Final).
-     *
-     * ***** ESTE MÉTODO DEBE DEFINIR $startDate y $endDate *****
      */
     public function index(Request $request)
     {
@@ -32,8 +30,7 @@ class SalesReportController extends Controller
             'end_date.after_or_equal' => 'La fecha final debe ser igual o posterior a la fecha inicial.'
         ]);
 
-        // 2. Determinar el rango de fechas a consultar
-        // Si no hay fecha, usa el día de hoy
+        // 2. Determinar el rango de fechas
         $startDate = $request->filled('start_date') ? Carbon::parse($validated['start_date'])->startOfDay() : Carbon::today()->startOfDay();
         $endDate = $request->filled('end_date') ? Carbon::parse($validated['end_date'])->endOfDay() : $startDate->copy()->endOfDay();
 
@@ -52,13 +49,28 @@ class SalesReportController extends Controller
                                   ->keys()
                                   ->first();
 
-        // --- PAGOS DE MEMBRESÍAS ---
+        // --- PAGOS DE MEMBRESÍAS (ACTUALIZADO CON MÉTODO Y REFERENCIA) ---
         $membershipPayments = Payment::whereBetween('payment_date', [$startDate->toDateString(), $endDate->toDateString()])
                                      ->with(['member', 'subscription.membershipType'])
                                      ->orderBy('created_at', 'desc')
                                      ->get();
+        
         $totalMembershipPaymentsAmount = $membershipPayments->sum('amount');
         $totalMembershipPaymentsCount = $membershipPayments->count();
+
+        // Cálculo de totales por método (Membresías)
+        $methodTotals = [
+            'Efectivo' => 0,
+            'Tarjeta' => 0,
+            'Transferencia' => 0
+        ];
+
+        foreach ($membershipPayments as $payment) {
+            $method = $payment->subscription->payment_method ?? 'Efectivo';
+            if (isset($methodTotals[$method])) {
+                $methodTotals[$method] += $payment->amount;
+            }
+        }
 
         // --- MOVIMIENTOS DE CAJA ---
         $cashMovements = CashMovement::whereBetween('created_at', [$startDate, $endDate])
@@ -72,10 +84,12 @@ class SalesReportController extends Controller
         // --- CALCULAR TOTAL GENERAL DE CAJA ---
         $grandTotal = $totalProductSalesAmount + $totalMembershipPaymentsAmount + $netCashMovement;
 
-        // 3. PASAR LAS VARIABLES CLAVE A LA VISTA
+        // Recuperamos settings globales para la vista
+        $globalSettings = Cache::get('global_settings', fn() => Setting::pluck('value', 'key'));
+
         return view('sales-report.index', compact(
-            'startDate', // <-- ¡VARIABLE REQUERIDA POR LA VISTA!
-            'endDate',   // <-- VARIABLE REQUERIDA POR LA VISTA!
+            'startDate',
+            'endDate',
             'productSales',
             'totalProductSalesAmount',
             'totalProductSalesCount',
@@ -83,11 +97,13 @@ class SalesReportController extends Controller
             'membershipPayments',
             'totalMembershipPaymentsAmount',
             'totalMembershipPaymentsCount',
+            'methodTotals',
             'cashMovements',
             'totalCashEntries',
             'totalCashExits',
             'netCashMovement',
-            'grandTotal'
+            'grandTotal',
+            'globalSettings'
         ));
     }
     
@@ -96,105 +112,74 @@ class SalesReportController extends Controller
      */
     public function sendEmailReport(Request $request)
     {
-        // ... (el código para sendEmailReport es largo y está bien,
-        // solo asegúrate de que esté completo en tu archivo) ...
-
-        // 1. Validar fechas
         $validated = $request->validate([
             'start_date' => 'nullable|date_format:Y-m-d',
             'end_date' => 'nullable|date_format:Y-m-d|after_or_equal:start_date',
-        ],[
-            'end_date.after_or_equal' => 'La fecha final debe ser igual o posterior a la inicial.',
-            'start_date.date_format' => 'Formato de fecha inicial inválido (YYYY-MM-DD).',
-            'end_date.date_format' => 'Formato de fecha final inválido (YYYY-MM-DD).',
         ]);
 
         $startDate = $request->filled('start_date') ? Carbon::parse($validated['start_date'])->startOfDay() : Carbon::today()->startOfDay();
         $endDate = $request->filled('end_date') ? Carbon::parse($validated['end_date'])->endOfDay() : $startDate->copy()->endOfDay();
 
-        // 2. Obtener la configuración de correo y el destinatario
-        $mailSettings = Cache::remember('mail_settings', 60*60, function () { /* ... */ });
-         $globalSettings = Cache::get('global_settings');
-         if (!$globalSettings) {
-             Log::warning('Global settings cache missed, recaching now for report sending.');
-             $globalSettings = Cache::rememberForever('global_settings', function () {
-                 return Setting::pluck('value', 'key');
-             });
-         }
+        $mailSettings = Cache::remember('mail_settings', 60*60, function () {
+            return Setting::where('key', 'like', 'mail_%')->pluck('value', 'key');
+        });
 
+        $globalSettings = Cache::get('global_settings', fn() => Setting::pluck('value', 'key'));
         $recipientEmail = $globalSettings->get('report_recipient_email');
 
-        // Validar configuración y destinatario
-        if (empty($mailSettings->get('mail_username')) || empty($mailSettings->get('mail_password')) || empty($mailSettings->get('mail_mailer'))) {
-            Log::error('Configuración de correo incompleta al intentar enviar reporte.', $mailSettings->toArray());
-            Cache::forget('mail_settings');
-            return back()->with('error', 'Error: La configuración de correo (Gmail) no está completa. Revisa Usuario, Contraseña de App y Mailer en Configuración.');
-        }
-         if (empty($recipientEmail)) {
-             Log::warning('Report recipient email is not configured.');
-            return back()->with('error', 'Error: No se ha configurado un correo electrónico para recibir los reportes en Configuración.');
+        if (empty($mailSettings->get('mail_username')) || empty($recipientEmail)) {
+            return back()->with('error', 'Configuración de correo o destinatario incompleta.');
         }
 
-
-        // 3. Obtener los datos del reporte
-        Log::info('Obteniendo datos del reporte...');
+        // Obtener datos para el reporte de correo
         $productSales = Sale::whereNull('deleted_at')
-                           ->whereBetween('created_at', [$startDate, $endDate])
-                           ->with('products')->orderBy('created_at', 'desc')->get();
-        $totalProductSalesAmount = $productSales->sum('total_amount');
-        $totalProductSalesCount = $productSales->count();
-        $membershipPayments = Payment::whereBetween('payment_date', [$startDate->toDateString(), $endDate->toDateString()])->with(['member', 'subscription.membershipType'])->orderBy('created_at', 'desc')->get();
-        $totalMembershipPaymentsAmount = $membershipPayments->sum('amount');
-        $totalMembershipPaymentsCount = $membershipPayments->count();
-        $cashMovements = CashMovement::whereBetween('created_at', [$startDate, $endDate])->with('user')->orderBy('created_at', 'desc')->get();
-        $totalCashEntries = $cashMovements->where('type', 'entry')->sum('amount');
-        $totalCashExits = $cashMovements->where('type', 'exit')->sum('amount');
-        $netCashMovement = $totalCashEntries - $totalCashExits;
-        $grandTotal = $totalProductSalesAmount + $totalMembershipPaymentsAmount + $netCashMovement;
+                            ->whereBetween('created_at', [$startDate, $endDate])
+                            ->get();
 
-        // Agrupar todos los datos necesarios para el Mailable en un array
-        $reportData = compact(
-            'startDate', 'endDate', 'productSales', 'totalProductSalesAmount', 'totalProductSalesCount',
-            'membershipPayments', 'totalMembershipPaymentsAmount', 'totalMembershipPaymentsCount',
-            'cashMovements', 'totalCashEntries', 'totalCashExits', 'netCashMovement', 'grandTotal'
-        );
+        $membershipPayments = Payment::whereBetween('payment_date', [$startDate->toDateString(), $endDate->toDateString()])
+                                     ->with(['subscription.membershipType', 'member'])
+                                     ->get();
 
-        // 4. Configurar y Enviar Correo usando Mailer dinámico
+        $cashMovements = CashMovement::whereBetween('created_at', [$startDate, $endDate])
+                                     ->get();
+
+        $reportData = [
+            'startDate' => $startDate,
+            'endDate' => $endDate,
+            'productSales' => $productSales,
+            'totalProductSalesAmount' => $productSales->sum('total_amount'),
+            'totalProductSalesCount' => $productSales->count(),
+            'membershipPayments' => $membershipPayments,
+            'totalMembershipPaymentsAmount' => $membershipPayments->sum('amount'),
+            'totalMembershipPaymentsCount' => $membershipPayments->count(),
+            'totalCashEntries' => $cashMovements->where('type', 'entry')->sum('amount'),
+            'totalCashExits' => $cashMovements->where('type', 'exit')->sum('amount'),
+            'netCashMovement' => $cashMovements->where('type', 'entry')->sum('amount') - $cashMovements->where('type', 'exit')->sum('amount'),
+            'grandTotal' => $productSales->sum('total_amount') + $membershipPayments->sum('amount') + ($cashMovements->where('type', 'entry')->sum('amount') - $cashMovements->where('type', 'exit')->sum('amount')),
+        ];
+
         try {
-            // Prepara la configuración específica para este envío
-            $mailConfig = [
+            $transport = app('mail.manager')->createSymfonyTransport([
                 'transport' => $mailSettings->get('mail_mailer'),
                 'host' => $mailSettings->get('mail_host'),
                 'port' => $mailSettings->get('mail_port'),
                 'encryption' => $mailSettings->get('mail_encryption'),
                 'username' => $mailSettings->get('mail_username'),
                 'password' => $mailSettings->get('mail_password'),
-                'timeout' => null,
-                'local_domain' => env('MAIL_EHLO_DOMAIN'), // Opcional, desde .env
-            ];
+            ]);
+
+            $dynamicMailer = new Mailer('report_smtp', app('view'), $transport, app('events'));
+            $gymName = $globalSettings->get('gym_name', config('app.name'));
             $fromAddress = $mailSettings->get('mail_from_address');
-            $fromName = $mailSettings->get('mail_from_name') ?? $globalSettings->get('gym_name', config('app.name'));
 
-            // Crear instancia de Mailer con configuración dinámica
-            $mailer = app()->makeWith('mailer', ['name' => 'report_smtp']); // Nombre temporal
-            $transport = app('mail.manager')->createSymfonyTransport($mailConfig); // Crea el transportador
-            $dynamicMailer = new Mailer('report_smtp', app('view'), $transport, app('events')); // Crea el Mailer
-            $dynamicMailer->alwaysFrom($fromAddress, $fromName); // Establece el remitente
+            $dynamicMailer->alwaysFrom($fromAddress, $gymName);
 
-            // Enviar el correo usando el Mailable SalesReportMail
-            $dynamicMailer->to($recipientEmail)
-                          ->send(new SalesReportMail($reportData, $fromAddress, $fromName));
+            $dynamicMailer->to($recipientEmail)->send(new SalesReportMail($reportData, $fromAddress, $gymName));
 
-            Log::info('Sales report email sent successfully to: ' . $recipientEmail);
-
+            return back()->with('success', 'Reporte de caja enviado exitosamente a ' . $recipientEmail);
         } catch (Exception $e) {
-            Log::error('Failed to send sales report email.', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
-            Cache::forget('mail_settings'); // Limpiar caché si falló la conexión
-            report($e); // Registrar el error completo en logs
-            return back()->with('error', 'Error al enviar el correo del reporte: ' . $e->getMessage());
+            Log::error('Fallo al enviar reporte: ' . $e->getMessage());
+            return back()->with('error', 'Error al enviar el correo: ' . $e->getMessage());
         }
-
-        // Redirige de vuelta con mensaje de éxito
-        return back()->with('success', 'Reporte de caja enviado exitosamente a ' . $recipientEmail);
     }
 }

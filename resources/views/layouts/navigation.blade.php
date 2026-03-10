@@ -45,8 +45,9 @@
                         </x-dropdown>
                     </div>
 
-                    {{-- Menú Desplegable de Administración --}}
-                     <div class="relative">
+                    {{-- Menú Desplegable de Administración (SOLO PARA ADMINS) --}}
+                    @hasanyrole('superadmin|admin')
+                    <div class="relative">
                         <x-dropdown align="left" width="48">
                             <x-slot name="trigger">
                                 <button class="inline-flex items-center px-1 pt-1 border-b-2 {{ (request()->routeIs(['admin.memberships.*', 'mail.*', 'settings.*', 'users.*', 'backups.*'])) ? 'border-indigo-400 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} text-sm font-medium leading-5 focus:outline-none transition duration-150 ease-in-out">
@@ -60,13 +61,15 @@
                                 <x-dropdown-link :href="route('admin.memberships.index')" :active="request()->routeIs('admin.memberships.*')"> {{ __('Tarifas') }} </x-dropdown-link>
                                 <x-dropdown-link :href="route('mail.index')" :active="request()->routeIs('mail.index')"> {{ __('Enviar Correos') }} </x-dropdown-link>
                                 <x-dropdown-link :href="route('settings.index')" :active="request()->routeIs('settings.*')"> {{ __('Configuración General') }} </x-dropdown-link>
-                                {{-- <x-dropdown-link :href="route('users.index')" :active="request()->routeIs('users.*')"> {{ __('Gestionar Usuarios') }} </x-dropdown-link> --}} {{-- Eliminado --}}
-                                <x-dropdown-link :href="route('backups.index')" :active="request()->routeIs('backups.*')">
-                                    {{ __('Backups') }}
-                                </x-dropdown-link>
+                                
+                                {{-- ESTE ES TU NUEVO BOTÓN DE STAFF --}}
+                                <x-dropdown-link :href="route('users.index')" :active="request()->routeIs('users.*')"> {{ __('Staff y Permisos') }} </x-dropdown-link> 
+                                
+                                <x-dropdown-link :href="route('backups.index')" :active="request()->routeIs('backups.*')"> {{ __('Backups') }} </x-dropdown-link>
                             </x-slot>
                         </x-dropdown>
                     </div>
+                    @endhasanyrole
                 </div>
             </div>
 
@@ -127,18 +130,19 @@
                 </div>
             </div>
 
-             {{-- Links Administrativos (Móvil) --}}
+             {{-- Links Administrativos (Móvil) (SOLO PARA ADMINS) --}}
+             @hasanyrole('superadmin|admin')
              <div class="pt-2 pb-1 border-t border-gray-200">
                 <div class="px-4"><div class="font-medium text-base text-gray-800">Administración</div></div>
                 <div class="mt-1 space-y-1">
                     <x-responsive-nav-link :href="route('admin.memberships.index')" :active="request()->routeIs('admin.memberships.*')"> {{ __('Tarifas') }} </x-responsive-nav-link>
                     <x-responsive-nav-link :href="route('mail.index')" :active="request()->routeIs('mail.index')"> {{ __('Enviar Correos') }} </x-responsive-nav-link>
                     <x-responsive-nav-link :href="route('settings.index')" :active="request()->routeIs('settings.*')"> {{ __('Configuración General') }} </x-responsive-nav-link>
-                    <x-responsive-nav-link :href="route('backups.index')" :active="request()->routeIs('backups.*')">
-                         {{ __('Backups') }}
-                    </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('users.index')" :active="request()->routeIs('users.*')"> {{ __('Staff y Permisos') }} </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('backups.index')" :active="request()->routeIs('backups.*')"> {{ __('Backups') }} </x-responsive-nav-link>
                 </div>
             </div>
+            @endhasanyrole
         </div>
 
         <div class="pt-4 pb-1 border-t border-gray-200">

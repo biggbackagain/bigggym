@@ -62,13 +62,6 @@
                            class="min-w-[160px] px-8 py-3 bg-white text-gray-900 hover:bg-gray-100 font-bold text-lg rounded-full transition-all shadow-xl transform hover:-translate-y-1 hover:shadow-2xl text-center">
                             Ingresar
                         </a>
-
-                        @if (Route::has('register'))
-                            <a href="{{ route('register') }}" 
-                               class="min-w-[160px] px-8 py-3 bg-transparent border-2 border-white/20 backdrop-blur-sm text-white hover:bg-white/10 hover:border-white font-bold text-lg rounded-full transition-all transform hover:-translate-y-1 text-center">
-                                Registrarse
-                            </a>
-                        @endif
                     @endauth
                 @endif
             </div>

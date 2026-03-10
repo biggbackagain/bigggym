@@ -19,6 +19,7 @@ use App\Http\Controllers\CashMovementController;
 use App\Http\Controllers\BackupController;
 use App\Http\Controllers\MyReportController;
 use App\Http\Controllers\SalesController; 
+use App\Http\Controllers\UserController; // <--- NUEVO: Controlador de Usuarios
 
 Route::get('/', function () {
     $gymName = Cache::get('global_settings')['gym_name'] 
@@ -30,6 +31,9 @@ Route::get('/', function () {
 Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Módulo de Usuarios y Roles (Para el Staff)
+    Route::resource('users', UserController::class)->except(['show']);
 
     // Módulo de Miembros
     Route::resource('members', MemberController::class);

@@ -56,13 +56,14 @@ class MemberController extends Controller
             'is_student' => 'nullable|boolean',
             'membership_type_id' => 'nullable|exists:membership_types,id',
             'payment_method' => 'required_with:membership_type_id|string|nullable',
-            'payment_reference' => 'nullable|string|max:100', // <-- Agregado
+            'payment_reference' => 'nullable|string|max:100',
         ]);
 
         $photoRelativePath = $request->hasFile('profile_photo') 
             ? $request->file('profile_photo')->store('member_photos', 'public') 
             : null;
 
+        // 1. Se crea el miembro base
         $member = new Member();
         $member->name = $validated['name'];
         $member->phone = $validated['phone'];
@@ -72,10 +73,12 @@ class MemberController extends Controller
         $member->status = 'expired';
         $member->save();
 
+        // 2. Se le asigna su código de acceso
         $settings = Cache::remember('global_settings', 60*60, fn() => Setting::pluck('value', 'key'));
         $member->member_code = ($settings->get('member_code_prefix', 'GYM-')) . $member->id;
         $member->save();
 
+        // 3. Si eligió membresía, se le cobra y se activa
         if ($request->filled('membership_type_id')) {
             $type = MembershipType::find($validated['membership_type_id']);
             $amount = $member->is_student ? $type->price_student : $type->price_general;
@@ -94,14 +97,19 @@ class MemberController extends Controller
                 'start_date' => Carbon::today(),
                 'end_date' => Carbon::today()->addDays($type->duration_days),
                 'payment_method' => $request->payment_method,
-                'payment_reference' => $request->payment_reference // <-- Agregado
+                'payment_reference' => $request->payment_reference
             ]);
             $member->update(['status' => 'active']);
             
             $this->sendNotification($member, $subscription, $settings);
+            // ELIMINAMOS la línea duplicada que estaba aquí
         }
 
-        return redirect()->route('members.index')->with('success', 'Miembro registrado.')->with('print_receipt', $member->id);
+        // 4. Redirigimos pasando el código generado y el nombre a la vista
+        return redirect()->route('members.index')
+            ->with('success', '¡Miembro registrado con éxito!')
+            ->with('print_receipt', $member->member_code)
+            ->with('new_member_name', $member->name);
     }
 
     public function edit(Member $member)
@@ -139,7 +147,7 @@ class MemberController extends Controller
         $request->validate([
             'membership_type_id' => 'required|exists:membership_types,id', 
             'payment_method' => 'required',
-            'payment_reference' => 'nullable|string|max:100', // <-- Agregado
+            'payment_reference' => 'nullable|string|max:100',
         ]);
 
         $type = MembershipType::find($request->membership_type_id);
@@ -159,13 +167,13 @@ class MemberController extends Controller
             'start_date' => Carbon::today(),
             'end_date' => Carbon::today()->addDays($type->duration_days),
             'payment_method' => $request->payment_method,
-            'payment_reference' => $request->payment_reference // <-- Agregado
+            'payment_reference' => $request->payment_reference
         ]);
 
         $member->update(['status' => 'active']);
         $this->sendNotification($member, $subscription, Cache::get('global_settings'));
 
-        return redirect()->route('members.index')->with('success', 'Renovado.')->with('print_receipt', $member->id);
+        return redirect()->route('members.index')->with('success', 'Renovado.')->with('print_receipt', $member->member_code);
     }
 
     public function showReceipt(Member $member)

@@ -25,6 +25,22 @@
                             <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" value="{{ old('email', $user->email) }}" required />
                             <x-input-error :messages="$errors->get('email')" class="mt-2" />
                         </div>
+                        <div class="mt-6 border-t border-gray-200 pt-6">
+    <h3 class="text-lg font-medium text-gray-900 mb-4">Cambiar Contraseña (Opcional)</h3>
+    <p class="text-sm text-gray-500 mb-4">Deja estos campos en blanco si no deseas cambiar la contraseña actual del usuario.</p>
+    
+    <div class="mt-4">
+        <x-input-label for="password" :value="__('Nueva Contraseña')" />
+        <x-text-input id="password" class="block mt-1 w-full" type="password" name="password" autocomplete="new-password" />
+        <x-input-error :messages="$errors->get('password')" class="mt-2" />
+    </div>
+
+    <div class="mt-4 mb-6">
+        <x-input-label for="password_confirmation" :value="__('Confirmar Nueva Contraseña')" />
+        <x-text-input id="password_confirmation" class="block mt-1 w-full" type="password" name="password_confirmation" />
+        <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
+    </div>
+</div>
 
                         <div class="mb-6">
                             <x-input-label for="role" value="Nivel de Acceso (Rol)" />

@@ -39,19 +39,18 @@
 
                          <div class="mt-4">
                             <x-input-label for="role" :value="__('Rol del Usuario')" />
-                            <select name="role" id="role" required x-model="selectedRole" {{-- Alpine para mostrar/ocultar permisos --}}
-                                    class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
-                                <option value="">-- Selecciona un rol --</option>
-                                @foreach ($roles as $role)
-                                    <option value="{{ $role }}" @selected(old('role') == $role)>
-                                        @if($role === 'superadmin') Super Admin
-                                        @elseif($role === 'admin') Admin
-                                        @elseif($role === 'receptionist') Recepcionista
-                                        @else {{ ucfirst($role) }}
-                                        @endif
-                                    </option>
-                                @endforeach
-                            </select>
+                            <select name="role" id="role" required x-model="selectedRole" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+    <option value="">-- Selecciona un rol --</option>
+    @foreach ($roles as $role)
+        <option value="{{ $role->name }}" @selected(old('role') == $role->name)>
+            @if($role->name === 'superadmin') Super Admin
+            @elseif($role->name === 'admin') Admin
+            @elseif($role->name === 'recepcionista') Recepcionista
+            @else {{ ucfirst($role->name) }}
+            @endif
+        </option>
+    @endforeach
+</select>
                             <x-input-error :messages="$errors->get('role')" class="mt-2" />
                         </div>
 

@@ -1,0 +1,1 @@
+import BiometricScanner from '@/Components/BiometricScanner.vue';

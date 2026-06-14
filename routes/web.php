@@ -8,6 +8,7 @@ use App\Http\Controllers\MemberController;
 use App\Http\Controllers\CheckInController;
 use App\Http\Controllers\MembershipTypeController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\BiometricController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\MailController;
@@ -63,6 +64,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('products', ProductController::class);
     Route::get('inventory', [InventoryController::class, 'index'])->name('inventory.index');
     Route::post('inventory', [InventoryController::class, 'update'])->name('inventory.update');
+    Route::post('/api/biometrics/extract', [BiometricController::class, 'extractVector'])->name('biometrics.extract');
+    Route::post('/check-in/biometric', [App\Http\Controllers\CheckInController::class, 'biometricCheckIn'])->name('check-in.biometric');
 
     // Módulo de Punto de Venta (POS)
     Route::get('pos', [PosController::class, 'index'])->name('pos.index');

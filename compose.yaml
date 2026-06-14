@@ -23,6 +23,22 @@ services:
             - sail
         depends_on:
             - mysql
+
+    #-----------------------------------------------------------
+    # Motor de Inteligencia Artificial (Reconocimiento Facial)
+    #-----------------------------------------------------------
+    biggym-ai:
+        build:
+            context: ./ai-service
+            dockerfile: Dockerfile
+        container_name: biggym-ai
+        volumes:
+            - './ai-service:/app'
+        ports:
+            - '8005:8000'
+        networks:
+            - sail
+
     mysql:
         image: 'mysql/mysql-server:8.0'
         ports:
@@ -48,9 +64,11 @@ services:
                 - '-p${DB_PASSWORD}'
             retries: 3
             timeout: 5s
+
 networks:
     sail:
         driver: bridge
+
 volumes:
     sail-mysql:
         driver: local

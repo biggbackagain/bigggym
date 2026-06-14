@@ -57,6 +57,7 @@ class MemberController extends Controller
             'membership_type_id' => 'nullable|exists:membership_types,id',
             'payment_method' => 'required_with:membership_type_id|string|nullable',
             'payment_reference' => 'nullable|string|max:100',
+            'face_vector' => 'nullable|json', // 🟢 1. Le decimos a Laravel que acepte el vector matemático
         ]);
 
         $photoRelativePath = $request->hasFile('profile_photo') 
@@ -71,6 +72,7 @@ class MemberController extends Controller
         $member->profile_photo_path = $photoRelativePath;
         $member->is_student = $request->has('is_student');
         $member->status = 'expired';
+        $member->face_vector = $validated['face_vector'] ?? null; // 🟢 2. Guardamos la matriz matemática en la base de datos
         $member->save();
 
         // 2. Se le asigna su código de acceso
@@ -102,7 +104,6 @@ class MemberController extends Controller
             $member->update(['status' => 'active']);
             
             $this->sendNotification($member, $subscription, $settings);
-            // ELIMINAMOS la línea duplicada que estaba aquí
         }
 
         // 4. Redirigimos pasando el código generado y el nombre a la vista

@@ -1,17 +1,27 @@
 #!/bin/bash
 
-# 1. Detecta en qué carpeta estamos parados exactamente en este momento
+# 1. Detecta dinámicamente la ruta sin importar en qué computadora o servidor estés
 DIRECTORIO_ACTUAL=$(pwd)
 
-# 2. Arma el comando de Cron con la ruta correcta que acaba de detectar
-COMANDO_CRON="* * * * * cd $DIRECTORIO_ACTUAL && ./vendor/bin/sail artisan schedule:run >> /dev/null 2>&1"
+# 2. Creamos un PATH universal que cubre Mac (Apple Silicon e Intel) y Servidores Linux (Ubuntu, Debian, etc.)
+UNIVERSAL_PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/snap/bin"
 
-# 3. Revisa si el comando ya existe en el Cron para no duplicarlo
-crontab -l | grep -q "$DIRECTORIO_ACTUAL"
+# 3. Arma el comando usando el estándar de Laravel (schedule:run)
+COMANDO_CRON="* * * * * cd \"$DIRECTORIO_ACTUAL\" && PATH=\"$UNIVERSAL_PATH\" ./vendor/bin/sail artisan schedule:run >> \"$DIRECTORIO_ACTUAL/cron_log.txt\" 2>&1"
+
+echo "========================================="
+echo "⚙️ Configurando el motor automático..."
+echo "📂 Ruta detectada: $DIRECTORIO_ACTUAL"
+
+# 4. Limpieza inteligente: Busca si ya hay un cron instalado para ESTA ruta y lo limpia para no hacer basura
+crontab -l 2>/dev/null | grep -q "$DIRECTORIO_ACTUAL"
 if [ $? -eq 0 ]; then
-    echo "⚠️  El Cronjob ya estaba instalado para la ruta: $DIRECTORIO_ACTUAL"
+    echo "⚠️  Actualizando instalación previa..."
+    (crontab -l 2>/dev/null | grep -v "$DIRECTORIO_ACTUAL"; echo "$COMANDO_CRON") | crontab -
 else
-    # 4. Inyecta el comando nuevo al Cron sin borrar los que ya existan
+    echo "🚀 Instalando tarea por primera vez..."
     (crontab -l 2>/dev/null; echo "$COMANDO_CRON") | crontab -
-    echo "✅ ¡Éxito! El Cronjob del Velador se instaló automáticamente en: $DIRECTORIO_ACTUAL"
 fi
+
+echo "✅ ¡Listo! El Cronjob quedó anclado correctamente."
+echo "========================================="

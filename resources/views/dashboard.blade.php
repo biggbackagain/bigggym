@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="text-[20px] font-medium text-[#171A20] dark:text-white tracking-tight">
-            {{ $settings['gym_name'] ?? 'Dashboard' }}
+            {{ __('Dashboard') }}
         </h2>
     </x-slot>
 

@@ -7,4 +7,4 @@ use Illuminate\Support\Facades\Schedule;
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
-Schedule::command('members:expire')->everyFifteenMinutes();
+Schedule::command('members:expire')->dailyAt('00:00');

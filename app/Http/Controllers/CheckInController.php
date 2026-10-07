@@ -48,7 +48,7 @@ class CheckInController extends Controller
                 'id' => $m->id, 
                 'name' => $m->name, 
                 'photo_path' => $m->profile_photo_path ? \Illuminate\Support\Facades\Storage::url($m->profile_photo_path) : null,
-                'vector' => json_decode($m->face_vector)
+                'vector' => is_string($m->face_vector) ? json_decode($m->face_vector, true) : $m->face_vector
             ])->values()->all();
             
         return response()->json($members);
@@ -77,4 +77,5 @@ class CheckInController extends Controller
         ];
     }
 }
+
 

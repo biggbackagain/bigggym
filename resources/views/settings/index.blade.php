@@ -119,7 +119,7 @@
                             <x-input-label for="gym_logo" :value="__('Logo del Gimnasio (barra de navegación)')" />
                             <input id="gym_logo" class="block mt-1 w-full border-gray-300 dark:border-[#444444] rounded-md shadow-sm focus:ring-[#171A20] dark:focus:ring-white focus:border-[#171A20] dark:focus:border-white" type="file" name="gym_logo" />
                             <x-input-error :messages="$errors->get('gym_logo')" class="mt-2" />
-                            @if(isset($settings['gym_logo']) && $settings['gym_logo'] && Storage::disk('public')->exists($settings['gym_logo']))
+                            @if(isset($settings['gym_logo']) && $settings['gym_logo'] && (str_starts_with($settings['gym_logo'], 'http') || Storage::disk('public')->exists($settings['gym_logo'])))
                                 <div class="mt-2">
                                     <p class="text-sm text-gray-600 dark:text-gray-400">Logo actual:</p>
                                     <img src="{{ (!empty($settings['gym_logo']) && str_starts_with($settings['gym_logo'], 'http') ? $settings['gym_logo'] : Storage::url($settings['gym_logo'])) }}" alt="Logo actual" class="h-10 w-auto object-contain bg-gray-100 dark:bg-[#1A1A1A] p-1 rounded">
@@ -134,7 +134,7 @@
                             <x-input-label for="gym_main_image" :value="__('Imagen Principal (Dashboard)')" />
                             <input id="gym_main_image" class="block mt-1 w-full border-gray-300 dark:border-[#444444] rounded-md shadow-sm focus:ring-[#171A20] dark:focus:ring-white focus:border-[#171A20] dark:focus:border-white" type="file" name="gym_main_image" />
                             <x-input-error :messages="$errors->get('gym_main_image')" class="mt-2" />
-                            @if(isset($settings['gym_main_image']) && $settings['gym_main_image'] && Storage::disk('public')->exists($settings['gym_main_image']))
+                            @if(isset($settings['gym_main_image']) && $settings['gym_main_image'] && (str_starts_with($settings['gym_main_image'], 'http') || Storage::disk('public')->exists($settings['gym_main_image'])))
                                 <div class="mt-2">
                                     <p class="text-sm text-gray-600 dark:text-gray-400">Imagen actual:</p>
                                     <img src="{{ (!empty($settings['gym_main_image']) && str_starts_with($settings['gym_main_image'], 'http') ? $settings['gym_main_image'] : Storage::url($settings['gym_main_image'])) }}" alt="Imagen actual" class="w-full h-auto rounded object-cover" style="max-height: 200px;">
@@ -190,6 +190,7 @@
         </div>
     </div>
 </x-app-layout>
+
 
 
 

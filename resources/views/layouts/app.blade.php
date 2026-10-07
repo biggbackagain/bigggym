@@ -11,7 +11,7 @@
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
         @if(isset($globalSettings['gym_logo']) && $globalSettings['gym_logo'] && Storage::disk('public')->exists($globalSettings['gym_logo']))
-            <link rel="icon" href="{{ Storage::url($globalSettings['gym_logo']) }}">
+            <link rel="icon" href="{{ (!empty($globalSettings['gym_logo']) && str_starts_with($globalSettings['gym_logo'], 'http') ? $globalSettings['gym_logo'] : Storage::url($globalSettings['gym_logo'])) }}">
         @endif
 
         {{-- ¡ESTA LÍNEA ES CRUCIAL y necesita 'npm run dev' para funcionar! --}}

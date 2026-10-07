@@ -67,10 +67,14 @@ class SettingsController extends Controller
         if ($request->hasFile('gym_logo')) {
             $oldLogoPath = Setting::where('key', 'gym_logo')->value('value'); // Obtiene ruta relativa antigua
             // Guarda en 'storage/app/private/public/settings' y obtiene ruta relativa nueva
-            $newLogoPath = $request->file('gym_logo')->store('settings', 'public');
+            if (config('filesystems.disks.cloudinary.url')) {
+                $newLogoPath = cloudinary()->uploadApi()->upload($request->file('gym_logo')->getRealPath(), ['folder' => 'settings'])['secure_url'];
+            } else {
+                $newLogoPath = $request->file('gym_logo')->store('settings', 'public');
+            }
             Setting::updateOrCreate(['key' => 'gym_logo'], ['value' => $newLogoPath]); // Guarda nueva ruta
             // Si había una ruta antigua y es diferente, borra el archivo antiguo
-            if ($oldLogoPath && $oldLogoPath !== $newLogoPath) {
+            if ($oldLogoPath && $oldLogoPath !== $newLogoPath && !str_starts_with($oldLogoPath, 'http')) {
                 Storage::disk('public')->delete($oldLogoPath);
             }
         }
@@ -78,9 +82,13 @@ class SettingsController extends Controller
         // Manejo de subida de Imagen Principal (misma lógica que el logo)
         if ($request->hasFile('gym_main_image')) {
             $oldImagePath = Setting::where('key', 'gym_main_image')->value('value');
-            $newImagePath = $request->file('gym_main_image')->store('settings', 'public');
+            if (config('filesystems.disks.cloudinary.url')) {
+                $newImagePath = cloudinary()->uploadApi()->upload($request->file('gym_main_image')->getRealPath(), ['folder' => 'settings'])['secure_url'];
+            } else {
+                $newImagePath = $request->file('gym_main_image')->store('settings', 'public');
+            }
             Setting::updateOrCreate(['key' => 'gym_main_image'], ['value' => $newImagePath]);
-            if ($oldImagePath && $oldImagePath !== $newImagePath) {
+            if ($oldImagePath && $oldImagePath !== $newImagePath && !str_starts_with($oldImagePath, 'http')) {
                 Storage::disk('public')->delete($oldImagePath);
             }
         }

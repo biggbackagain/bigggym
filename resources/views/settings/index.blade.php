@@ -122,7 +122,7 @@
                             @if(isset($settings['gym_logo']) && $settings['gym_logo'] && Storage::disk('public')->exists($settings['gym_logo']))
                                 <div class="mt-2">
                                     <p class="text-sm text-gray-600 dark:text-gray-400">Logo actual:</p>
-                                    <img src="{{ Storage::url($settings['gym_logo']) }}" alt="Logo actual" class="h-10 w-auto object-contain bg-gray-100 dark:bg-[#1A1A1A] p-1 rounded">
+                                    <img src="{{ (!empty($settings['gym_logo']) && str_starts_with($settings['gym_logo'], 'http') ? $settings['gym_logo'] : Storage::url($settings['gym_logo'])) }}" alt="Logo actual" class="h-10 w-auto object-contain bg-gray-100 dark:bg-[#1A1A1A] p-1 rounded">
                                 </div>
                             @elseif(isset($settings['gym_logo']) && $settings['gym_logo'])
                                  <p class="text-xs text-red-600 mt-1">Archivo de logo no encontrado. Vuelve a subirlo.</p>
@@ -137,7 +137,7 @@
                             @if(isset($settings['gym_main_image']) && $settings['gym_main_image'] && Storage::disk('public')->exists($settings['gym_main_image']))
                                 <div class="mt-2">
                                     <p class="text-sm text-gray-600 dark:text-gray-400">Imagen actual:</p>
-                                    <img src="{{ Storage::url($settings['gym_main_image']) }}" alt="Imagen actual" class="w-full h-auto rounded object-cover" style="max-height: 200px;">
+                                    <img src="{{ (!empty($settings['gym_main_image']) && str_starts_with($settings['gym_main_image'], 'http') ? $settings['gym_main_image'] : Storage::url($settings['gym_main_image'])) }}" alt="Imagen actual" class="w-full h-auto rounded object-cover" style="max-height: 200px;">
                                 </div>
                              @elseif(isset($settings['gym_main_image']) && $settings['gym_main_image'])
                                  <p class="text-xs text-red-600 mt-1">Archivo de imagen principal no encontrado. Vuelve a subirlo.</p>

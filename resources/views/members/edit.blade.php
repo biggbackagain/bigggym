@@ -16,7 +16,7 @@
 
                         @if ($member->profile_photo_path)
                             <div class="mb-4">
-                                <img src="{{ Storage::url($member->profile_photo_path) }}" alt="Foto de perfil" class="w-24 h-24 rounded-full object-cover">
+                                <img src="{{ (!empty($member->profile_photo_path) && str_starts_with($member->profile_photo_path, 'http') ? $member->profile_photo_path : Storage::url($member->profile_photo_path)) }}" alt="Foto de perfil" class="w-24 h-24 rounded-full object-cover">
                             </div>
                         @endif
 

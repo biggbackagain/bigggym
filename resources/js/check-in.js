@@ -1,4 +1,4 @@
-import * as faceapi from '@vladmandic/face-api';
+
 
 const station = document.getElementById('access-station');
 if (station) {
@@ -247,3 +247,4 @@ if (station) {
         kiosk.textContent = document.fullscreenElement ? 'Salir de pantalla completa' : 'Pantalla completa';
     });
 }
+

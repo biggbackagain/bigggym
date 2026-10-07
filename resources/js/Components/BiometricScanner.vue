@@ -37,7 +37,7 @@
 
 <script setup>
 import { ref, onBeforeUnmount } from 'vue';
-import * as faceapi from '@vladmandic/face-api';
+
 
 const emit = defineEmits(['vector-extracted']);
 

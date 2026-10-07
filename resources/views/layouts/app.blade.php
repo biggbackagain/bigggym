@@ -15,6 +15,7 @@
         @endif
 
         {{-- ¡ESTA LÍNEA ES CRUCIAL y necesita 'npm run dev' para funcionar! --}}
+        <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.min.js"></script>
         @vite(['resources/css/app.css', 'resources/js/app.js'])
         
 
@@ -68,6 +69,7 @@
         @stack('scripts')
     </body>
 </html>
+
 
 
 

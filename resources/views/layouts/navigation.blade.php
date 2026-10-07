@@ -6,8 +6,9 @@
                     <a href="{{ route('dashboard') }}" class="flex items-center gap-3">
                         @if(isset($globalSettings['gym_logo']) && $globalSettings['gym_logo'] && (str_starts_with($globalSettings['gym_logo'], 'http') || Storage::disk('public')->exists($globalSettings['gym_logo'])))
                             <img src="{{ (!empty($globalSettings['gym_logo']) && str_starts_with($globalSettings['gym_logo'], 'http') ? $globalSettings['gym_logo'] : Storage::url($globalSettings['gym_logo'])) }}" alt="Logo" class="block h-9 w-auto object-contain">
+                        @else
+                          <span class="text-[16px] font-medium text-[#171A20] dark:text-white uppercase tracking-[2px]">{{ $globalSettings['gym_name'] ?? 'VYPER' }}</span>
                         @endif
-                        <span class="text-[16px] font-medium text-[#171A20] dark:text-white uppercase tracking-[2px]">{{ $globalSettings['gym_name'] ?? 'VYPER' }}</span>
                     </a>
                 </div>
 
@@ -159,6 +160,7 @@
         </div>
     </div>
 </nav>
+
 
 
 

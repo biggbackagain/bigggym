@@ -25,3 +25,9 @@ Ir a mi Perfil
 ¡Nos vemos en el gimnasio!<br>
 El equipo de {{ $gymName }}
 </x-mail::message>
+
+
+
+
+
+

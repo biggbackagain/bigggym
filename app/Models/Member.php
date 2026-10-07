@@ -24,10 +24,13 @@ class Member extends Model // <-- Ahora Laravel sabe qué 'Model' es este
     ];
 
     protected $casts = [
+        'face_vector' => 'array',
         'is_student' => 'boolean',
         // 'created_at' => 'datetime', // Descomenta si necesitas castear fechas
         // 'updated_at' => 'datetime',
     ];
+
+    protected $hidden = ['face_vector'];
 
     protected static function booted()
     {

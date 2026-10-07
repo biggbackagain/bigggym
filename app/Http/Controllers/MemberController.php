@@ -48,6 +48,9 @@ class MemberController extends Controller
 
     public function store(Request $request)
     {
+        if (is_string($request->input('face_vector'))) {
+            $request->merge(['face_vector' => json_decode($request->input('face_vector'), true) ?? $request->input('face_vector')]);
+        }
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'phone' => 'nullable|string|max:20',
@@ -57,7 +60,8 @@ class MemberController extends Controller
             'membership_type_id' => 'nullable|exists:membership_types,id',
             'payment_method' => 'required_with:membership_type_id|string|nullable',
             'payment_reference' => 'nullable|string|max:100',
-            'face_vector' => 'nullable|json', // 🟢 1. Le decimos a Laravel que acepte el vector matemático
+            'face_vector' => 'nullable|array|size:512',
+            'face_vector.*' => 'required|numeric|between:-2,2',
         ]);
 
         $photoRelativePath = $request->hasFile('profile_photo') 
@@ -67,8 +71,8 @@ class MemberController extends Controller
         // 1. Se crea el miembro base
         $member = new Member();
         $member->name = $validated['name'];
-        $member->phone = $validated['phone'];
-        $member->email = $validated['email'];
+        $member->phone = $validated['phone'] ?? null;
+        $member->email = $validated['email'] ?? null;
         $member->profile_photo_path = $photoRelativePath;
         $member->is_student = $request->has('is_student');
         $member->status = 'expired';

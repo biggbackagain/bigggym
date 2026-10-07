@@ -10,3 +10,9 @@ Saludos,<br>
 {{-- Nombre del Gimnasio (Remitente) --}}
 {{ $fromName ?? config('app.name') }}
 </x-mail::message>
+
+
+
+
+
+

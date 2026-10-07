@@ -137,3 +137,8 @@
     line-height: 0.8rem;
 }
 /* ========= FIN: Estilos personalizados ========== */
+/* Shared application surfaces */
+[x-cloak], [hidden] { display: none !important; }
+
+/* Check-in styles moved to Tailwind utilities in check-in/index.blade.php */
+

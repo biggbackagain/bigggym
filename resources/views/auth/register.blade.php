@@ -40,7 +40,7 @@
         </div>
 
         <div class="flex items-center justify-end mt-4">
-            <a class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" href="{{ route('login') }}">
+            <a class="underline text-sm text-[#5C5E62] dark:text-gray-400 hover:text-[#171A20] dark:text-white dark:text-[#8E8E8E] dark:hover:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#171A20] dark:focus:ring-white" href="{{ route('login') }}">
                 {{ __('Already registered?') }}
             </a>
 
@@ -50,3 +50,11 @@
         </div>
     </form>
 </x-guest-layout>
+
+
+
+
+
+
+
+

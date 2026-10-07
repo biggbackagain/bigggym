@@ -1,20 +1,20 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
             {{ __('Renovar Membresía:') }} {{ $member->name }}
         </h2>
     </x-slot>
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 text-gray-900">
+            <div class="bg-white dark:bg-[#000000] overflow-hidden shadow-sm sm:rounded-lg">
+                <div class="p-6 text-gray-900 dark:text-white">
                     
                     <form method="POST" action="{{ route('members.processRenewal', $member) }}">
                         @csrf
 
-                        <div class="mb-4 p-4 bg-gray-50 rounded-lg">
-                            <p class="text-sm font-bold text-gray-700 uppercase">Estado Actual:</p>
+                        <div class="mb-4 p-4 bg-gray-50 dark:bg-[#111111] rounded-lg">
+                            <p class="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase">Estado Actual:</p>
                             <p class="text-lg {{ $member->status == 'active' ? 'text-green-600' : 'text-red-600' }}">
                                 {{ ucfirst($member->status) }} 
                                 @if($member->latestSubscription) 
@@ -26,7 +26,7 @@
                         {{-- TIPO DE MEMBRESÍA --}}
                         <div class="mt-4">
                             <x-input-label for="membership_type_id" :value="__('Seleccionar Nuevo Plan')" />
-                            <select name="membership_type_id" id="membership_type_id" required class="block mt-1 w-full border-gray-300 rounded-md shadow-sm">
+                            <select name="membership_type_id" id="membership_type_id" required class="block mt-1 w-full border-gray-300 dark:border-[#444444] rounded-md shadow-sm">
                                 @foreach ($membershipTypes as $type)
                                     <option value="{{ $type->id }}">
                                         {{ $type->name }} - ${{ $member->is_student ? $type->price_student : $type->price_general }}
@@ -38,7 +38,7 @@
                         {{-- FORMA DE PAGO --}}
                         <div class="mt-4">
                             <x-input-label for="payment_method" :value="__('Forma de Pago')" />
-                            <select name="payment_method" id="payment_method_renew" onchange="toggleReferenceRenew()" class="block mt-1 w-full border-gray-300 rounded-md shadow-sm">
+                            <select name="payment_method" id="payment_method_renew" onchange="toggleReferenceRenew()" class="block mt-1 w-full border-gray-300 dark:border-[#444444] rounded-md shadow-sm">
                                 <option value="Efectivo">Efectivo</option>
                                 <option value="Tarjeta">Tarjeta (Débito/Crédito)</option>
                                 <option value="Transferencia">Transferencia / SPEI</option>
@@ -75,3 +75,9 @@
         }
     </script>
 </x-app-layout>
+
+
+
+
+
+

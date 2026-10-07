@@ -5,46 +5,52 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        {{-- Título dinámico --}}
         <title>{{ $globalSettings['gym_name'] ?? config('app.name', 'Laravel') }}</title>
-
-        <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
-
-        @if(isset($globalSettings['gym_logo']) && $globalSettings['gym_logo'] && Storage::disk('public')->exists($globalSettings['gym_logo']))
-            <link rel="icon" href="{{ Storage::url($globalSettings['gym_logo']) }}">
-        @endif
-
         @vite(['resources/css/app.css', 'resources/js/app.js'])
+        
+    <script>localStorage.removeItem('theme'); document.documentElement.classList.remove('dark');</script>
     </head>
-    <body class="font-sans text-gray-900 antialiased">
-        <div class="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 bg-gray-100">
-            <div>
-                <a href="/">
-                    {{-- Logo dinámico --}}
+    <body class="font-sans text-[#393C41] dark:text-gray-300 dark:text-white antialiased bg-white dark:bg-[#000000] transition-colors duration-500" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+        
+        <div class="min-h-screen flex flex-col w-full bg-white dark:bg-[#000000] transition-colors duration-500">
+            
+            <!-- Minimalist Top Navigation -->
+            <header class="w-full px-6 py-4 flex justify-between items-center">
+                <a href="/" class="flex items-center gap-3">
                     @if(isset($globalSettings['gym_logo']) && $globalSettings['gym_logo'] && Storage::disk('public')->exists($globalSettings['gym_logo']))
-                        <img src="{{ Storage::url($globalSettings['gym_logo']) }}" alt="Logo" class="w-20 h-20 object-contain"> {{-- Usamos object-contain --}}
-                    @else
-                        <x-application-logo class="w-20 h-20 fill-current text-gray-500" />
+                        <img src="{{ Storage::url($globalSettings['gym_logo']) }}" alt="Logo" class="w-8 h-8 object-contain">
                     @endif
+                    <span class="text-[15px] font-medium text-[#171A20] dark:text-white uppercase tracking-[2px]">{{ $globalSettings['gym_name'] ?? 'VYPER' }}</span>
                 </a>
-            </div>
+                
+                <!-- Dark Mode Toggle -->
+                
+            </header>
 
-            <div class="w-full sm:max-w-md mt-6 px-6 py-4 bg-white shadow-md overflow-hidden sm:rounded-lg">
-                {{ $slot }}
-            </div>
+            <!-- Form Container -->
+            <main class="flex-grow flex flex-col items-center justify-center p-6">
+                <div class="w-full max-w-[340px]">
+                    {{ $slot }}
+                </div>
+            </main>
+
+            <!-- Minimal Footer -->
+            <footer class="p-6 text-center text-[12px] text-[#5C5E62] dark:text-gray-400 flex flex-col sm:flex-row justify-center gap-4">
+                <span>&copy; {{ date('Y') }} BiggGym System</span>
+                <span class="hidden sm:inline">|</span>
+                <a href="https://www.irangarcia.dev" target="_blank" rel="noopener noreferrer" class="hover:text-[#171A20] dark:text-white transition-colors underline underline-offset-4 decoration-transparent hover:decoration-[#171A20]">
+                    Ing. Iran Garcia
+                </a>
+            </footer>
+            
         </div>
-        {{-- Footer Opcional para página de login --}}
-        <footer class="w-full text-center text-sm text-gray-500 mt-4 pb-4 shrink-0">
-             <p>
-                 Desarrollado por
-                 <a href="https://irangarcia.mx" target="_blank" rel="noopener noreferrer" class="text-gray-600 hover:text-gray-900 hover:underline">
-                     Ing. Bryan Irán García Gutiérrez
-                 </a>
-             </p>
-             <p class="mt-1 text-xs text-gray-400">
-                 &copy; {{ date('Y') }} Todos los Derechos Reservados.
-             </p>
-         </footer>
     </body>
 </html>
+
+
+
+
+
+
+
+

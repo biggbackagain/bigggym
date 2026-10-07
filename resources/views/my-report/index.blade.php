@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight print:hidden">
+        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight print:hidden">
             {{-- Título dinámico --}}
             @if($startDate->isSameDay($endDate))
                 {{ __('Mi Corte del Día') }} ({{ $startDate->format('d/m/Y') }})
@@ -22,7 +22,7 @@
             </div>
 
             {{-- FILTROS (OCULTOS AL IMPRIMIR) --}}
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-4 print:hidden">
+            <div class="bg-white dark:bg-[#000000] overflow-hidden shadow-sm sm:rounded-lg mb-4 print:hidden">
                 <div class="p-6">
                     <form method="GET" action="{{ route('my.report') }}">
                         <div class="flex flex-wrap items-center gap-2">
@@ -36,7 +36,7 @@
                             </div>
                             <div class="self-end">
                                 <x-primary-button>Filtrar</x-primary-button>
-                                <a href="{{ route('my.report') }}" class="ms-2 text-sm text-gray-500 hover:underline whitespace-nowrap">Ver Hoy</a>
+                                <a href="{{ route('my.report') }}" class="ms-2 text-sm text-gray-500 dark:text-gray-400 hover:underline whitespace-nowrap">Ver Hoy</a>
                             </div>
                              @error('end_date') <p class="text-xs text-red-600 col-span-full">{{ $message }}</p> @enderror
                         </div>
@@ -50,24 +50,24 @@
                 <div class="bg-gray-800 text-white p-6 rounded-lg shadow-lg col-span-1 md:col-span-2 flex flex-col justify-center">
                     <p class="text-xs font-bold uppercase text-gray-400">Total Neto a Entregar</p>
                     <p class="text-4xl font-black">${{ number_format($grandTotal, 2) }}</p>
-                    <button onclick="window.print()" class="mt-2 w-fit bg-white text-gray-800 px-3 py-1 rounded text-xs font-bold uppercase print:hidden hover:bg-gray-200">
+                    <button onclick="window.print()" class="mt-2 w-fit bg-white dark:bg-[#000000] text-gray-800 dark:text-gray-200 px-3 py-1 rounded text-xs font-bold uppercase print:hidden hover:bg-gray-200">
                         🖨️ Imprimir Corte
                     </button>
                 </div>
 
                 {{-- Efectivo (Solo Membresías) --}}
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg border-l-4 border-green-500 print:shadow-none print:border">
-                    <div class="p-6 text-gray-900">
-                        <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider">Efectivo (Membresías)</h3>
+                <div class="bg-white dark:bg-[#000000] overflow-hidden shadow-sm sm:rounded-lg border-l-4 border-green-500 print:shadow-none print:border">
+                    <div class="p-6 text-gray-900 dark:text-white">
+                        <h3 class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Efectivo (Membresías)</h3>
                         {{-- Usamos la variable methodTotals que pasamos desde el controlador --}}
                         <p class="text-2xl font-bold text-green-600">${{ number_format($methodTotals['Efectivo'] ?? 0, 2) }}</p>
                     </div>
                 </div>
 
                 {{-- Digital (Solo Membresías) --}}
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg border-l-4 border-blue-500 print:shadow-none print:border">
-                    <div class="p-6 text-gray-900">
-                        <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider">Digital (Membresías)</h3>
+                <div class="bg-white dark:bg-[#000000] overflow-hidden shadow-sm sm:rounded-lg border-l-4 border-blue-500 print:shadow-none print:border">
+                    <div class="p-6 text-gray-900 dark:text-white">
+                        <h3 class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Digital (Membresías)</h3>
                         <p class="text-2xl font-bold text-blue-600">
                             ${{ number_format(($methodTotals['Tarjeta'] ?? 0) + ($methodTotals['Transferencia'] ?? 0), 2) }}
                         </p>
@@ -77,44 +77,44 @@
             </div>
 
             {{-- DETALLE: MEMBRESÍAS (Con Referencia) --}}
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6 border print:shadow-none print:mb-4">
-                <div class="p-6 print:p-2 text-gray-900">
-                    <h3 class="text-lg font-bold text-gray-900 mb-4 border-b pb-2">Detalle: Mis Pagos de Membresías</h3>
+            <div class="bg-white dark:bg-[#000000] overflow-hidden shadow-sm sm:rounded-lg mb-6 border print:shadow-none print:mb-4">
+                <div class="p-6 print:p-2 text-gray-900 dark:text-white">
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4 border-b pb-2">Detalle: Mis Pagos de Membresías</h3>
                      <div class="overflow-x-auto">
-                         <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
+                         <table class="min-w-full divide-y divide-gray-200 dark:divide-[#333333]">
+                            <thead class="bg-gray-50 dark:bg-[#111111]">
                                 <tr>
-                                    <th class="px-4 py-2 text-left text-xs font-bold uppercase text-gray-500">Hora</th>
-                                    <th class="px-4 py-2 text-left text-xs font-bold uppercase text-gray-500">Miembro</th>
-                                    <th class="px-4 py-2 text-left text-xs font-bold uppercase text-gray-500">Plan</th>
-                                    <th class="px-4 py-2 text-left text-xs font-bold uppercase text-gray-500">Método</th>
-                                    <th class="px-4 py-2 text-left text-xs font-bold uppercase text-gray-500">Referencia</th> {{-- COLUMNA NUEVA --}}
-                                    <th class="px-4 py-2 text-right text-xs font-bold uppercase text-gray-500">Monto</th>
+                                    <th class="px-4 py-2 text-left text-xs font-bold uppercase text-gray-500 dark:text-gray-400">Hora</th>
+                                    <th class="px-4 py-2 text-left text-xs font-bold uppercase text-gray-500 dark:text-gray-400">Miembro</th>
+                                    <th class="px-4 py-2 text-left text-xs font-bold uppercase text-gray-500 dark:text-gray-400">Plan</th>
+                                    <th class="px-4 py-2 text-left text-xs font-bold uppercase text-gray-500 dark:text-gray-400">Método</th>
+                                    <th class="px-4 py-2 text-left text-xs font-bold uppercase text-gray-500 dark:text-gray-400">Referencia</th> {{-- COLUMNA NUEVA --}}
+                                    <th class="px-4 py-2 text-right text-xs font-bold uppercase text-gray-500 dark:text-gray-400">Monto</th>
                                 </tr>
                             </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
+                            <tbody class="bg-white dark:bg-[#000000] divide-y divide-gray-200 dark:divide-[#333333]">
                                 @forelse ($membershipPayments as $payment)
                                      <tr>
-                                        <td class="px-4 py-2 text-sm text-gray-500">{{ $payment->created_at->format('h:i A') }}</td>
+                                        <td class="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">{{ $payment->created_at->format('h:i A') }}</td>
                                         <td class="px-4 py-2 text-sm font-bold">{{ $payment->member?->name ?? 'N/A' }}</td>
-                                        <td class="px-4 py-2 text-sm text-gray-500">{{ $payment->subscription?->membershipType?->name ?? 'N/A' }}</td>
+                                        <td class="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">{{ $payment->subscription?->membershipType?->name ?? 'N/A' }}</td>
                                         
                                         {{-- Método de Pago --}}
                                         <td class="px-4 py-2 text-sm">
-                                            <span class="px-2 py-1 rounded text-xs font-bold {{ ($payment->subscription->payment_method ?? '') == 'Efectivo' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800' }}">
+                                            <span class="px-2 py-1 rounded text-xs font-bold {{ ($payment->subscription->payment_method ?? '') == 'Efectivo' ? 'bg-green-100 dark:bg-green-900/30 text-green-800' : 'bg-blue-100 text-blue-800' }}">
                                                 {{ $payment->subscription->payment_method ?? 'Efectivo' }}
                                             </span>
                                         </td>
 
                                         {{-- Referencia --}}
-                                        <td class="px-4 py-2 text-sm font-mono text-gray-600">
+                                        <td class="px-4 py-2 text-sm font-mono text-gray-600 dark:text-gray-400">
                                             {{ $payment->subscription->payment_reference ?? '--' }}
                                         </td>
 
                                         <td class="px-4 py-2 text-sm font-bold text-right">${{ number_format($payment->amount, 2) }}</td>
                                     </tr>
                                 @empty
-                                     <tr> <td colspan="6" class="px-4 py-4 text-center text-gray-500">No registraste pagos de membresías.</td> </tr>
+                                     <tr> <td colspan="6" class="px-4 py-4 text-center text-gray-500 dark:text-gray-400">No registraste pagos de membresías.</td> </tr>
                                 @endforelse
                             </tbody>
                         </table>
@@ -123,24 +123,24 @@
             </div>
 
             {{-- DETALLE: PRODUCTOS --}}
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6 border print:shadow-none print:mb-4">
-                <div class="p-6 print:p-2 text-gray-900">
-                    <h3 class="text-lg font-bold text-gray-900 mb-4 border-b pb-2">Detalle: Mis Ventas de Productos</h3>
+            <div class="bg-white dark:bg-[#000000] overflow-hidden shadow-sm sm:rounded-lg mb-6 border print:shadow-none print:mb-4">
+                <div class="p-6 print:p-2 text-gray-900 dark:text-white">
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4 border-b pb-2">Detalle: Mis Ventas de Productos</h3>
                     <div class="overflow-x-auto">
-                         <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
+                         <table class="min-w-full divide-y divide-gray-200 dark:divide-[#333333]">
+                            <thead class="bg-gray-50 dark:bg-[#111111]">
                                 <tr>
-                                    <th class="px-4 py-2 text-left text-xs font-bold uppercase text-gray-500">Hora</th>
-                                    <th class="px-4 py-2 text-left text-xs font-bold uppercase text-gray-500">Productos</th>
-                                    <th class="px-4 py-2 text-left text-xs font-bold uppercase text-gray-500">Método</th>
-                                    <th class="px-4 py-2 text-left text-xs font-bold uppercase text-gray-500">Ref</th>
-                                    <th class="px-4 py-2 text-right text-xs font-bold uppercase text-gray-500">Total</th>
+                                    <th class="px-4 py-2 text-left text-xs font-bold uppercase text-gray-500 dark:text-gray-400">Hora</th>
+                                    <th class="px-4 py-2 text-left text-xs font-bold uppercase text-gray-500 dark:text-gray-400">Productos</th>
+                                    <th class="px-4 py-2 text-left text-xs font-bold uppercase text-gray-500 dark:text-gray-400">Método</th>
+                                    <th class="px-4 py-2 text-left text-xs font-bold uppercase text-gray-500 dark:text-gray-400">Ref</th>
+                                    <th class="px-4 py-2 text-right text-xs font-bold uppercase text-gray-500 dark:text-gray-400">Total</th>
                                 </tr>
                             </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
+                            <tbody class="bg-white dark:bg-[#000000] divide-y divide-gray-200 dark:divide-[#333333]">
                                 @forelse ($productSales as $sale)
                                     <tr>
-                                        <td class="px-4 py-2 text-sm text-gray-500">#P{{ $sale->id }} <br> {{ $sale->created_at->format('h:i A') }}</td>
+                                        <td class="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">#P{{ $sale->id }} <br> {{ $sale->created_at->format('h:i A') }}</td>
                                         <td class="px-4 py-2 text-sm">
                                             <ul class="list-disc list-inside">
                                                 @foreach ($sale->products as $product) 
@@ -153,7 +153,7 @@
                                         <td class="px-4 py-2 text-sm font-bold text-right">${{ number_format($sale->total_amount, 2) }}</td>
                                     </tr>
                                 @empty
-                                    <tr> <td colspan="5" class="px-4 py-4 text-center text-gray-500">No registraste ventas de productos.</td> </tr>
+                                    <tr> <td colspan="5" class="px-4 py-4 text-center text-gray-500 dark:text-gray-400">No registraste ventas de productos.</td> </tr>
                                 @endforelse
                             </tbody>
                         </table>
@@ -162,23 +162,23 @@
             </div>
 
             {{-- DETALLE: MOVIMIENTOS DE CAJA --}}
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg border print:shadow-none">
-                 <div class="p-6 print:p-2 text-gray-900">
-                     <h3 class="text-lg font-bold text-gray-900 mb-4 border-b pb-2">Detalle: Mis Movimientos de Caja</h3>
+            <div class="bg-white dark:bg-[#000000] overflow-hidden shadow-sm sm:rounded-lg border print:shadow-none">
+                 <div class="p-6 print:p-2 text-gray-900 dark:text-white">
+                     <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4 border-b pb-2">Detalle: Mis Movimientos de Caja</h3>
                      <div class="overflow-x-auto">
-                         <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
+                         <table class="min-w-full divide-y divide-gray-200 dark:divide-[#333333]">
+                            <thead class="bg-gray-50 dark:bg-[#111111]">
                                 <tr>
-                                    <th class="px-4 py-2 text-left text-xs font-bold uppercase text-gray-500">Hora</th>
-                                    <th class="px-4 py-2 text-left text-xs font-bold uppercase text-gray-500">Tipo</th>
-                                    <th class="px-4 py-2 text-left text-xs font-bold uppercase text-gray-500">Monto</th>
-                                    <th class="px-4 py-2 text-left text-xs font-bold uppercase text-gray-500">Descripción</th>
+                                    <th class="px-4 py-2 text-left text-xs font-bold uppercase text-gray-500 dark:text-gray-400">Hora</th>
+                                    <th class="px-4 py-2 text-left text-xs font-bold uppercase text-gray-500 dark:text-gray-400">Tipo</th>
+                                    <th class="px-4 py-2 text-left text-xs font-bold uppercase text-gray-500 dark:text-gray-400">Monto</th>
+                                    <th class="px-4 py-2 text-left text-xs font-bold uppercase text-gray-500 dark:text-gray-400">Descripción</th>
                                 </tr>
                             </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
+                            <tbody class="bg-white dark:bg-[#000000] divide-y divide-gray-200 dark:divide-[#333333]">
                                 @forelse ($cashMovements as $movement)
                                     <tr>
-                                        <td class="px-4 py-2 text-sm text-gray-500">{{ $movement->created_at->format('h:i A') }}</td>
+                                        <td class="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">{{ $movement->created_at->format('h:i A') }}</td>
                                         <td class="px-4 py-2 text-sm font-bold {{ $movement->type == 'entry' ? 'text-green-600' : 'text-red-600' }}">
                                             {{ $movement->type == 'entry' ? 'Entrada' : 'Salida' }}
                                         </td>
@@ -188,7 +188,7 @@
                                         <td class="px-4 py-2 text-sm">{{ $movement->description }}</td>
                                     </tr>
                                 @empty
-                                     <tr> <td colspan="4" class="px-4 py-4 text-center text-gray-500">No registraste movimientos de caja.</td> </tr>
+                                     <tr> <td colspan="4" class="px-4 py-4 text-center text-gray-500 dark:text-gray-400">No registraste movimientos de caja.</td> </tr>
                                 @endforelse
                             </tbody>
                         </table>
@@ -201,7 +201,7 @@
                 <div class="text-center">
                     <div class="border-t border-black w-3/4 mx-auto pt-2">
                         <p class="font-bold text-sm uppercase">Firma del Cajero</p>
-                        <p class="text-xs text-gray-600">{{ Auth::user()->name }}</p>
+                        <p class="text-xs text-gray-600 dark:text-gray-400">{{ Auth::user()->name }}</p>
                     </div>
                 </div>
                 <div class="text-center">
@@ -218,3 +218,9 @@
         </div>
     </div>
 </x-app-layout>
+
+
+
+
+
+

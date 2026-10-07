@@ -25,3 +25,10 @@
         </x-mail::footer>
     </x-slot:footer>
 </x-mail::layout>
+
+
+
+
+
+
+

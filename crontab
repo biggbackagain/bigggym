@@ -1,1 +1,2 @@
-* * * * * cd /Users/bgarcia/bigggym && PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin" ./vendor/bin/sail artisan members:expire >> /Users/bgarcia/bigggym/cron_log.txt 2>&1
+# Replace PHP and project paths. Install under the application account, not root.
+* * * * * cd /var/www/bigggym && /usr/bin/php8.4 artisan schedule:run >> /dev/null 2>&1

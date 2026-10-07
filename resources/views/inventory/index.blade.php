@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
             {{ __('Ajuste de Inventario') }}
         </h2>
     </x-slot>
@@ -9,17 +9,17 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             
             @if (session('success'))
-                <div class="mb-4 p-4 bg-green-100 text-green-700 rounded-lg">
+                <div class="mb-4 p-4 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-lg">
                     {{ session('success') }}
                 </div>
             @endif
             @if (session('error'))
-                <div class="mb-4 p-4 bg-red-100 text-red-700 rounded-lg">
+                <div class="mb-4 p-4 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-lg">
                     {{ session('error') }}
                 </div>
             @endif
 
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-4">
+            <div class="bg-white dark:bg-[#000000] overflow-hidden shadow-sm sm:rounded-lg mb-4">
                 <div class="p-6">
                     <form method="GET" action="{{ route('inventory.index') }}">
                         <div class="flex">
@@ -32,24 +32,24 @@
 
             <form method="POST" action="{{ route('inventory.update') }}">
                 @csrf
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                <div class="bg-white dark:bg-[#000000] overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
+                        <table class="min-w-full divide-y divide-gray-200 dark:divide-[#333333]">
+                            <thead class="bg-gray-50 dark:bg-[#111111]">
                                 <tr>
-                                    <th class_alias="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Producto</th>
-                                    <th class_alias="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock Actual</th>
-                                    <th class_alias="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 150px;">Ajuste (Sumar/Restar)</th>
+                                    <th class_alias="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Producto</th>
+                                    <th class_alias="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Stock Actual</th>
+                                    <th class_alias="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider" style="width: 150px;">Ajuste (Sumar/Restar)</th>
                                 </tr>
                             </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
+                            <tbody class="bg-white dark:bg-[#000000] divide-y divide-gray-200 dark:divide-[#333333]">
                                 @forelse ($products as $product)
                                     <tr>
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="font-medium text-gray-900">{{ $product->name }}</div>
-                                            <div class="text-sm text-gray-500">{{ $product->sku }}</div>
+                                            <div class="font-medium text-gray-900 dark:text-white">{{ $product->name }}</div>
+                                            <div class="text-sm text-gray-500 dark:text-gray-400">{{ $product->sku }}</div>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold {{ $product->stock <= 5 ? 'text-red-600' : 'text-gray-700' }}">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold {{ $product->stock <= 5 ? 'text-red-600' : 'text-gray-700 dark:text-gray-300' }}">
                                             {{ $product->stock }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
@@ -66,7 +66,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="3" class="px-6 py-4 whitespace-nowrap text-center text-gray-500">
+                                        <td colspan="3" class="px-6 py-4 whitespace-nowrap text-center text-gray-500 dark:text-gray-400">
                                             No se encontraron productos.
                                         </td>
                                     </tr>
@@ -92,3 +92,9 @@
         </div>
     </div>
 </x-app-layout>
+
+
+
+
+
+

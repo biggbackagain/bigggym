@@ -27,3 +27,9 @@ Aquí tienes un resumen de tu compra en **{{ $gymName }}** realizada el {{ $sale
 Gracias,<br>
 El equipo de {{ $gymName }}
 </x-mail::message>
+
+
+
+
+
+

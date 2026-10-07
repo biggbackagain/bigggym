@@ -44,6 +44,10 @@ return [
         ],
 
         'mysql' => [
+            'dump' => [
+                'dump_binary_path' => env('DB_DUMP_BINARY_PATH', ''),
+                'use_single_transaction' => true,
+            ],
             'driver' => 'mysql',
             'url' => env('DB_URL'),
             'host' => env('DB_HOST', '127.0.0.1'),

@@ -1,0 +1,21 @@
+[Unit]
+Description=BiggGym recognition service
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/bigggym/ai-service
+EnvironmentFile=/var/www/bigggym/ai-service/.env
+ExecStart=/var/www/bigggym/ai-service/.venv/bin/python /var/www/bigggym/ai-service/run.py
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+Environment=PYTHONDONTWRITEBYTECODE=1
+
+[Install]
+WantedBy=multi-user.target

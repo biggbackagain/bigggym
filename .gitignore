@@ -16,6 +16,7 @@
 /public/build
 /public/hot
 /public/storage
+/ai-service/venv
 /storage/*.key
 /storage/pail
 /vendor
@@ -23,3 +24,9 @@ Homestead.json
 Homestead.yaml
 Thumbs.db
 README.md
+/.tmp/
+__pycache__/
+*.pyc
+/.venv/
+/ai-service/.venv/
+/dist/

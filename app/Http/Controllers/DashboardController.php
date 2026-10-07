@@ -39,6 +39,14 @@ class DashboardController extends Controller
         
         $tasks = Task::orderBy('is_completed', 'asc')->latest()->get();
 
+        // 4. PRÓXIMOS VENCIMIENTOS (Próximos 7 días)
+        $expiringSubscriptions = Subscription::with('member')
+            ->whereDate('end_date', '>=', Carbon::today())
+            ->whereDate('end_date', '<=', Carbon::today()->addDays(7))
+            ->orderBy('end_date', 'asc')
+            ->take(5)
+            ->get();
+
         return view('dashboard', compact(
             'activeMembersCount',
             'inactiveMembersCount',
@@ -48,7 +56,8 @@ class DashboardController extends Controller
             'transferToday',
             'totalToday',
             'settings',
-            'tasks'
+            'tasks',
+            'expiringSubscriptions'
         ));
     }
 }

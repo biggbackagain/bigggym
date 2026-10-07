@@ -48,6 +48,22 @@ class BackupController extends Controller
     {
         try {
             Log::info('[BackupController] Iniciando backup manual...');
+            
+            $_SERVER['SYSTEMROOT'] = 'C:\Windows';
+            $_ENV['SYSTEMROOT'] = 'C:\Windows';
+            putenv('SYSTEMROOT=C:\Windows');
+            $_SERVER['SYSTEMDRIVE'] = 'C:';
+            $_ENV['SYSTEMDRIVE'] = 'C:';
+            putenv('SYSTEMDRIVE=C:');
+            
+            $tempDir = sys_get_temp_dir();
+            $_SERVER['TEMP'] = $tempDir;
+            $_ENV['TEMP'] = $tempDir;
+            putenv("TEMP=$tempDir");
+            $_SERVER['TMP'] = $tempDir;
+            $_ENV['TMP'] = $tempDir;
+            putenv("TMP=$tempDir");
+            
             $exitCode = Artisan::call('backup:run', ['--only-files' => false, '--only-db' => false]);
             
             if ($exitCode === 0) {

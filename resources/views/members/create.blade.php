@@ -1,14 +1,14 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
             {{ __('Registrar Nuevo Miembro') }}
         </h2>
     </x-slot>
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 text-gray-900">
+            <div class="bg-white dark:bg-[#000000] overflow-hidden shadow-sm sm:rounded-lg">
+                <div class="p-6 text-gray-900 dark:text-white">
                     
                     <form method="POST" action="{{ route('members.store') }}" enctype="multipart/form-data">
                         @csrf
@@ -33,23 +33,24 @@
 
                         <div class="mt-4">
                             <x-input-label for="profile_photo" :value="__('Foto de Perfil (Opcional)')" />
-                            <input id="profile_photo" class="block mt-1 w-full border-gray-300 rounded-md shadow-sm" type="file" name="profile_photo" />
+                            <input id="profile_photo" class="block mt-1 w-full border-gray-300 dark:border-[#444444] rounded-md shadow-sm" type="file" name="profile_photo" />
                             <x-input-error :messages="$errors->get('profile_photo')" class="mt-2" />
                         </div>
 
                         <div class="block mt-4">
                             <label for="is_student" class="inline-flex items-center">
-                                <input id="is_student" type="checkbox" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500" name="is_student" value="1">
-                                <span class="ms-2 text-sm text-gray-600">{{ __('¿Es estudiante? (Aplica descuento)') }}</span>
+                                <input id="is_student" type="checkbox" class="rounded border-gray-300 dark:border-[#444444] text-[#171A20] dark:text-white underline underline-offset-4 shadow-sm focus:ring-[#171A20] dark:focus:ring-white" name="is_student" value="1">
+                                <span class="ms-2 text-sm text-gray-600 dark:text-gray-400">{{ __('¿Es estudiante? (Aplica descuento)') }}</span>
                             </label>
                         </div>
 
-                        <hr class="my-8 border-gray-200">
+                        <hr class="my-8 border-gray-200 dark:border-[#333333]">
 
                         {{-- 🟢 MÓDULO BIOMÉTRICO (INICIO) 🟢 --}}
-                        <div class="mb-8 p-6 bg-gray-50 border border-gray-200 rounded-lg">
-                            <h3 class="text-lg font-medium text-gray-900 mb-2">Registro Biométrico (Opcional)</h3>
-                            <p class="text-sm text-gray-500 mb-4">Captura el rostro del socio para el control de acceso automatizado. Asegúrate de que mire fijamente a la cámara.</p>
+                        @if(config('services.biometrics.enabled'))
+                        <div class="mb-8 p-6 bg-gray-50 dark:bg-[#111111] border border-gray-200 dark:border-[#333333] rounded-lg">
+                            <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">Registro Biométrico (Opcional)</h3>
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Captura el rostro del socio para el control de acceso automatizado. Asegúrate de que mire fijamente a la cámara.</p>
 
                             <div class="relative bg-black rounded-lg overflow-hidden w-full max-w-md mx-auto flex items-center justify-center shadow-inner" style="height: 250px;">
                                 <video id="videoElement" class="w-full h-full object-cover transform scale-x-[-1]" autoplay playsinline style="display: none;"></video>
@@ -60,27 +61,29 @@
                             </div>
 
                             <div class="mt-6 flex justify-center gap-4">
-                                <button type="button" id="btnStart" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-md transition">
+                                <button type="button" id="btnStart" class="bg-[#171A20] dark:bg-white text-white dark:text-[#171A20] hover:bg-[#393C41] dark:hover:bg-gray-200 text-white font-bold py-2 px-6 rounded-md transition">
                                     Encender Cámara
                                 </button>
                                 <button type="button" id="btnCapture" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-md transition" style="display: none;">
-                                    Tomar Foto y Extraer Vector
+                                    Capturar rostro
                                 </button>
                             </div>
 
-                            <p id="statusMessage" class="mt-4 text-center text-sm font-medium"></p>
+                            <p id="statusMessage" role="status" aria-live="polite" class="mt-4 text-center text-sm font-medium"></p>
+                            <x-input-error :messages="$errors->get('face_vector')" class="mt-2" />
 
                             <input type="hidden" name="face_vector" id="face_vector_input">
                             <canvas id="canvasElement" style="display: none;"></canvas>
                         </div>
                         {{-- 🟢 MÓDULO BIOMÉTRICO (FIN) 🟢 --}}
+                        @endif
 
-                        <hr class="my-6 border-gray-200">
+                        <hr class="my-6 border-gray-200 dark:border-[#333333]">
 
                         {{-- SECCIÓN DE MEMBRESÍA Y PAGO --}}
                         <div class="mt-4">
                             <x-input-label for="membership_type_id" :value="__('Asignar Membresía (Opcional)')" />
-                            <select name="membership_type_id" id="membership_type_id" class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                            <select name="membership_type_id" id="membership_type_id" class="block mt-1 w-full border-gray-300 dark:border-[#444444] focus:border-[#171A20] dark:focus:border-white focus:ring-[#171A20] dark:focus:ring-white rounded-md shadow-sm">
                                 <option value="">-- No asignar membresía ahora --</option>
                                 @foreach ($membershipTypes as $type)
                                     <option value="{{ $type->id }}">{{ $type->name }}</option>
@@ -91,7 +94,7 @@
                         {{-- FORMA DE PAGO --}}
                         <div class="mt-4">
                             <x-input-label for="payment_method" :value="__('Forma de Pago')" />
-                            <select name="payment_method" id="payment_method" onchange="toggleReferenceField()" class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                            <select name="payment_method" id="payment_method" onchange="toggleReferenceField()" class="block mt-1 w-full border-gray-300 dark:border-[#444444] focus:border-[#171A20] dark:focus:border-white focus:ring-[#171A20] dark:focus:ring-white rounded-md shadow-sm">
                                 <option value="Efectivo">Efectivo</option>
                                 <option value="Tarjeta">Tarjeta (Débito/Crédito)</option>
                                 <option value="Transferencia">Transferencia / SPEI</option>
@@ -132,6 +135,7 @@
         // 2. Lógica del motor Biométrico
         document.addEventListener('DOMContentLoaded', function () {
             const video = document.getElementById('videoElement');
+            if (!video) return;
             const canvas = document.getElementById('canvasElement');
             const btnStart = document.getElementById('btnStart');
             const btnCapture = document.getElementById('btnCapture');
@@ -140,39 +144,46 @@
             const faceVectorInput = document.getElementById('face_vector_input');
 
             let stream = null;
+            window.addEventListener('pagehide', () => stream?.getTracks().forEach(track => track.stop()));
 
             // Encender cámara
             btnStart.addEventListener('click', async () => {
+                btnStart.disabled = true;
                 try {
-                    stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 960 }, height: { ideal: 720 } }, audio: false });
                     video.srcObject = stream;
+                    await video.play();
+                    faceVectorInput.value = '';
                     video.style.display = 'block';
                     placeholder.style.display = 'none';
                     btnStart.style.display = 'none';
                     btnCapture.style.display = 'block';
                     statusMessage.textContent = '';
                 } catch (err) {
+                    stream?.getTracks().forEach(track => track.stop());
                     statusMessage.textContent = 'Error: No se pudo acceder a la cámara.';
                     statusMessage.className = 'mt-4 text-center text-sm font-medium text-red-600';
-                }
+                } finally { btnStart.disabled = false; }
             });
 
             // Tomar foto y extraer matemáticas
             btnCapture.addEventListener('click', async () => {
+                if (video.readyState < 2 || !video.videoWidth) {
+                    statusMessage.textContent = 'Espera a que la cámara esté lista.';
+                    return;
+                }
                 statusMessage.textContent = 'Analizando rostro con Inteligencia Artificial...';
                 statusMessage.className = 'mt-4 text-center text-sm font-medium text-blue-600';
                 btnCapture.disabled = true;
                 btnCapture.classList.add('opacity-50');
 
-                const context = canvas.getContext('2d');
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-                context.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-                const base64Image = canvas.toDataURL('image/jpeg', 0.8);
-
                 try {
-                    const response = await fetch('/api/biometrics/extract', {
+                    const context = canvas.getContext('2d');
+                    canvas.width = Math.min(video.videoWidth, 960);
+                    canvas.height = Math.round(video.videoHeight * canvas.width / video.videoWidth);
+                    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    const base64Image = canvas.toDataURL('image/jpeg', 0.9);
+                    const response = await fetch('{{ route('biometrics.extract') }}', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -184,21 +195,23 @@
 
                     const data = await response.json();
 
-                    if (data.success) {
-                        statusMessage.textContent = '¡Rostro escaneado y vectorizado con éxito!';
+                    if (response.ok && data.success && Array.isArray(data.vector) && data.vector.length === 128) {
+                        statusMessage.textContent = 'Rostro capturado. Guarda al socio para completar el registro.';
                         statusMessage.className = 'mt-4 text-center text-sm font-medium text-green-600';
 
                         // Apagar cámara
                         stream.getTracks().forEach(track => track.stop());
                         video.style.display = 'none';
                         btnCapture.style.display = 'none';
+                        btnStart.style.display = 'block';
+                        btnStart.textContent = 'Volver a capturar';
                         placeholder.style.display = 'flex';
-                        placeholder.innerHTML = '<span class="text-green-500 font-bold">Biometría Registrada ✔</span>';
+                        placeholder.textContent = 'Rostro capturado ✓';
 
                         // Guardar en el input oculto
                         faceVectorInput.value = JSON.stringify(data.vector);
                     } else {
-                        statusMessage.textContent = data.message;
+                        statusMessage.textContent = data.message || 'No se pudo capturar el rostro. Reintenta.';
                         statusMessage.className = 'mt-4 text-center text-sm font-medium text-red-600';
                         btnCapture.disabled = false;
                         btnCapture.classList.remove('opacity-50');
@@ -208,8 +221,18 @@
                     statusMessage.className = 'mt-4 text-center text-sm font-medium text-red-600';
                     btnCapture.disabled = false;
                     btnCapture.classList.remove('opacity-50');
+                } finally {
+                    btnCapture.disabled = false;
+                    btnCapture.classList.remove('opacity-50');
                 }
             });
         });
     </script>
 </x-app-layout>
+
+
+
+
+
+
+

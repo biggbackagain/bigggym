@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
             {{ __('Punto de Venta (POS)') }}
         </h2>
     </x-slot>
@@ -10,18 +10,18 @@
 
             {{-- Mensajes de Éxito/Error --}}
             @if (session('success'))
-                <div class="mb-4 p-4 bg-green-100 text-green-700 rounded-lg">
+                <div class="mb-4 p-4 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-lg">
                     {{ session('success') }}
                 </div>
             @endif
             @if (session('error'))
-                <div class="mb-4 p-4 bg-red-100 text-red-700 rounded-lg">
+                <div class="mb-4 p-4 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-lg">
                     {{ session('error') }}
                 </div>
             @endif
             {{-- Mostrar Errores de Validación --}}
             @if ($errors->any())
-                <div class="mb-4 p-4 bg-red-100 text-red-700 rounded-lg">
+                <div class="mb-4 p-4 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-lg">
                     <p><strong>Por favor corrige los siguientes errores:</strong></p>
                     <ul>
                         @foreach ($errors->all() as $error)
@@ -34,8 +34,8 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
 
                 <div class="md:col-span-2">
-                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                        <div class="p-6 text-gray-900">
+                    <div class="bg-white dark:bg-[#000000] overflow-hidden shadow-sm sm:rounded-lg">
+                        <div class="p-6 text-gray-900 dark:text-white">
                             {{-- Búsqueda de Productos --}}
                             <form method="GET" action="{{ route('pos.index') }}">
                                 <div class="flex">
@@ -50,13 +50,13 @@
                                     {{-- Botón para añadir al carrito --}}
                                     <button @click="addToCart({{ $product }})"
                                             :disabled="{{ $product->stock }} <= 0"
-                                            class="border border-gray-200 rounded-lg p-3 text-center hover:bg-indigo-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                                            class="border border-gray-200 dark:border-[#333333] rounded-lg p-3 text-center hover:bg-indigo-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
                                         <div class="font-semibold">{{ $product->name }}</div>
-                                        <div class="text-sm text-gray-600">${{ number_format($product->price, 2) }}</div>
+                                        <div class="text-sm text-gray-600 dark:text-gray-400">${{ number_format($product->price, 2) }}</div>
                                         <div class="text-xs {{ $product->stock <= 5 ? 'text-red-500 font-bold' : 'text-blue-500' }}">Stock: {{ $product->stock }}</div>
                                     </button>
                                 @empty
-                                    <p class="text-gray-500 col-span-full">No se encontraron productos activos o con stock.</p>
+                                    <p class="text-gray-500 dark:text-gray-400 col-span-full">No se encontraron productos activos o con stock.</p>
                                 @endforelse
                             </div>
                         </div>
@@ -64,9 +64,9 @@
                 </div>
 
                 <div class="md:col-span-1">
-                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg sticky top-6">
-                        <div class="p-6 text-gray-900">
-                            <h3 class="text-lg font-medium text-gray-900 mb-4">Carrito de Venta</h3>
+                    <div class="bg-white dark:bg-[#000000] overflow-hidden shadow-sm sm:rounded-lg sticky top-6">
+                        <div class="p-6 text-gray-900 dark:text-white">
+                            <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Carrito de Venta</h3>
 
                             {{-- Formulario que envía el carrito y datos de pago --}}
                             <form method="POST" action="{{ route('pos.store') }}" @submit="isProcessing = true; clearCartOnSubmit()"> {{-- Limpiar carrito al enviar con éxito --}}
@@ -74,7 +74,7 @@
                                 <div class="space-y-3 min-h-[100px]"> {{-- Altura mínima para que no salte --}}
                                     {{-- Mensaje si el carrito está vacío --}}
                                     <template x-if="cart.length === 0">
-                                        <p class="text-gray-500 text-center pt-4">Agrega productos...</p>
+                                        <p class="text-gray-500 dark:text-gray-400 text-center pt-4">Agrega productos...</p>
                                     </template>
 
                                     {{-- Itera sobre los items del carrito (manejado por Alpine.js) --}}
@@ -86,7 +86,7 @@
                                             {{-- Muestra nombre y precio del item --}}
                                             <div>
                                                 <div class="font-medium" x-text="item.name"></div>
-                                                <div class="text-sm text-gray-600" x-text="'$' + parseFloat(item.price).toFixed(2)"></div>
+                                                <div class="text-sm text-gray-600 dark:text-gray-400" x-text="'$' + parseFloat(item.price).toFixed(2)"></div>
                                             </div>
                                             {{-- Controles de cantidad y botón eliminar --}}
                                             <div class="flex items-center">
@@ -94,11 +94,11 @@
                                                 <input type="number" :name="'cart[' + index + '][quantity]'"
                                                        x-model.number="item.quantity"
                                                        @input="updateQuantity(item.id, $event.target.value)" {{-- Llama a función JS al cambiar --}}
-                                                       class="w-16 text-center border-gray-300 rounded-md shadow-sm text-sm py-1"
+                                                       class="w-16 text-center border-gray-300 dark:border-[#444444] rounded-md shadow-sm text-sm py-1"
                                                        min="1" :max="item.maxStock"> {{-- Limita cantidad al stock --}}
 
                                                 {{-- Botón para eliminar item del carrito --}}
-                                                <button type="button" @click.prevent="removeFromCart(item.id)" class="ms-2 text-red-500 hover:text-red-700">
+                                                <button type="button" @click.prevent="removeFromCart(item.id)" class="ms-2 text-red-500 hover:text-red-700 dark:text-red-400">
                                                     {{-- Icono SVG de X para eliminar --}}
                                                     <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
                                                 </button>
@@ -112,7 +112,7 @@
                                     {{-- Select para Método de Pago --}}
                                     <div>
                                         <x-input-label for="payment_method" :value="__('Método de Pago')" />
-                                        <select name="payment_method" id="payment_method" x-model="paymentMethod" required class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                        <select name="payment_method" id="payment_method" x-model="paymentMethod" required class="block mt-1 w-full border-gray-300 dark:border-[#444444] focus:border-[#171A20] dark:focus:border-white focus:ring-[#171A20] dark:focus:ring-white rounded-md shadow-sm">
                                             <option value="cash">Efectivo</option>
                                             <option value="transfer">Transferencia</option>
                                             <option value="card">Tarjeta (Crédito/Débito)</option>
@@ -127,7 +127,7 @@
                                     </div>
                                 </div>
 
-                                <div class="border-t border-gray-200 mt-4 pt-4">
+                                <div class="border-t border-gray-200 dark:border-[#333333] mt-4 pt-4">
                                     <div class="flex justify-between items-center text-lg font-bold">
                                         <span>Total:</span>
                                         <span x-text="'$' + cartTotal.toFixed(2)">$0.00</span>
@@ -252,3 +252,9 @@
         }
     </script>
 </x-app-layout>
+
+
+
+
+
+

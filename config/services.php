@@ -1,6 +1,11 @@
 <?php
 
 return [
+    'biometrics' => [
+        'enabled' => env('BIOMETRICS_ENABLED', false),
+        'url' => env('BIOMETRICS_URL', 'http://127.0.0.1:8005'),
+        'token' => env('BIOMETRICS_TOKEN'),
+    ],
 
     /*
     |--------------------------------------------------------------------------

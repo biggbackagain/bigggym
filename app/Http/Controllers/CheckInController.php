@@ -2,105 +2,89 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Member;
+use App\Models\Setting;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Http;
+use Illuminate\Http\Request;
+use App\Services\BiometricClient;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Cache;
 
 class CheckInController extends Controller
 {
     public function index()
     {
-        return view('check-in.index');
+        $settings = Cache::remember('global_settings', 60 * 60, fn() => Setting::pluck('value', 'key'));
+        $biometricsEnabled = ($settings->get('biometrics_enabled', '0') === '1')
+            && config('services.biometrics.enabled');
+        return view('check-in.index', compact('biometricsEnabled'));
     }
 
-    // Método manual (cuando teclean el código)
     public function store(Request $request)
     {
-        $request->validate(['member_code' => 'required|string']);
-        $member = Member::where('member_code', $request->member_code)->first();
-        
-        $result = $this->processAccess($member);
-        return redirect()->route('check-in.index')->with($result);
+        $request->validate(['member_code' => 'required|string|max:100']);
+        $member = Member::where('member_code', trim($request->member_code))->first();
+        return redirect()->route('check-in.index')->with('access_result', $this->processAccess($member));
     }
 
-    // Nuevo método biométrico (cuando la cámara dispara)
-    public function biometricCheckIn(Request $request)
+    public function biometricCheckIn(Request $request, BiometricClient $biometrics)
     {
-        $request->validate(['image' => 'required|string']);
-
-        // 1. Extraemos solo los miembros que ya tienen foto registrada
-        $members = Member::whereNotNull('face_vector')->get()->map(function ($m) {
-            return [
-                'id' => $m->id,
-                'vector' => is_string($m->face_vector) ? json_decode($m->face_vector) : $m->face_vector
-            ];
-        })->toArray();
+        if (!config('services.biometrics.enabled')) {
+            return response()->json(['status' => 'disabled', 'message' => 'Reconocimiento desactivado. Usa tu código de socio.'], 503);
+        }
+        $request->validate(['image' => 'required|string|max:6000000']);
+        $members = Member::whereNotNull('face_vector')->get(['id', 'face_vector'])
+            ->filter(fn ($member) => is_array($member->face_vector)
+                && count($member->face_vector) === 512
+                && collect($member->face_vector)->every(fn ($value) => is_numeric($value) && is_finite((float) $value)))
+            ->map(fn ($member) => ['id' => $member->id, 'vector' => array_values($member->face_vector)])
+            ->values()->all();
 
         if (empty($members)) {
-            return response()->json(['status' => 'waiting']);
+            return response()->json(['status' => 'waiting', 'message' => 'No hay rostros registrados. Usa tu código de socio.']);
         }
 
         try {
-            // 2. Mandamos la foto y la base de datos a Python
-            $response = Http::timeout(5)->post('http://biggym-ai:8000/api/recognize', [
-                'image_base64' => $request->image,
-                'known_faces' => $members
-            ]);
-
-            $aiResult = $response->json();
-
-            // 3. Si la IA no reconoció a nadie, seguimos esperando
-            if (!$aiResult['success'] || !$aiResult['match']) {
-                return response()->json(['status' => 'waiting']);
+            $response = $biometrics->connection()->post('/api/recognize', [
+                    'image_base64' => $request->image,
+                    'known_faces' => $members,
+                ]);
+            $result = $response->json();
+            if (!$response->successful() || !is_array($result) || ($result['success'] ?? false) !== true) {
+                return response()->json(['status' => 'unavailable', 'message' => 'Reconocimiento no disponible. Usa tu código o reintenta.'], 503);
             }
-
-            // 4. ¡Hizo Match! Registramos su asistencia
-            $member = Member::find($aiResult['member_id']);
-            $result = $this->processAccess($member);
-            
-            return response()->json($result);
-
+            if (($result['match'] ?? false) !== true) {
+                return response()->json(['status' => 'waiting', 'message' => $result['message'] ?? 'Mira de frente a la cámara.']);
+            }
+            if (!isset($result['member_id']) || !in_array($result['member_id'], array_column($members, 'id'), true)) {
+                return response()->json(['status' => 'unavailable', 'message' => 'Respuesta de reconocimiento inválida.'], 503);
+            }
+            return response()->json($this->processAccess(Member::find($result['member_id'])));
         } catch (\Exception $e) {
-            return response()->json(['status' => 'error', 'message' => 'Error de conexión IA.']);
+            return response()->json(['status' => 'unavailable', 'message' => 'Sin conexión al reconocimiento. Usa tu código de socio.'], 503);
         }
     }
 
-    // ... dentro de tu CheckInController.php ...
+    private function processAccess(?Member $member): array
+    {
+        if (!$member) {
+            return ['status' => 'error', 'message' => 'Código de socio no encontrado.'];
+        }
+        $today = Carbon::today();
+        $subscription = $member->subscriptions()->whereDate('start_date', '<=', $today)
+            ->whereDate('end_date', '>=', $today)->latest('end_date')->first();
+        $allowed = $subscription !== null;
+        $subscription ??= $member->subscriptions()->latest('end_date')->first();
+        $member->update(['status' => $allowed ? 'active' : 'expired']);
 
-private function processAccess($member)
-{
-    if (!$member) {
-        return ['status' => 'error', 'message' => 'Código de miembro no encontrado.'];
-    }
-
-    $subscription = $member->subscriptions()->latest('end_date')->first();
-    $photo = $member->profile_photo_path ? Storage::url($member->profile_photo_path) : null;
-    $endDateFormatted = $subscription ? $subscription->end_date->format('d/m/Y') : null;
-
-    // 🟢 CONSULTA DINÁMICA: Lee el valor exacto de la DB que administras en Settings
-    $gymName = \App\Models\Setting::where('key', 'gym_name')->value('value') ?? 'BiggGym';
-
-    if ($subscription && $subscription->end_date >= Carbon::today()) {
-        $member->update(['status' => 'active']);
         return [
-            'status' => 'success',
-            'message' => "Acceso Permitido: {$member->name}",
-            'gym_name' => $gymName, // Enviamos el nombre dinámico
-            'end_date' => $endDateFormatted,
-            'photo_path' => $photo
+            'status' => $allowed ? 'success' : 'error',
+            'member_id' => $member->id,
+            'name' => $member->name,
+            'message' => $allowed ? 'Tu membresía está vigente. ¡Buen entrenamiento!' : 'No tienes una membresía vigente. Acércate a recepción.',
+            'gym_name' => Setting::where('key', 'gym_name')->value('value') ?? 'BiggGym',
+            'end_date' => $subscription?->end_date->format('d/m/Y'),
+            'photo_path' => $member->profile_photo_path ? Storage::url($member->profile_photo_path) : null,
         ];
     }
-
-    $member->update(['status' => 'expired']);
-    return [
-        'status' => 'error',
-        'message' => "Acceso Denegado: {$member->name}. Membresía Vencida.",
-        'gym_name' => $gymName, // Enviamos el nombre dinámico
-        'end_date' => $endDateFormatted,
-        'photo_path' => $photo
-    ];
-}
-    
 }

@@ -39,7 +39,7 @@
         }
     </style>
 </head>
-<body class="bg-gray-100">
+<body class="bg-gray-100 dark:bg-[#1A1A1A]">
 
     {{-- BARRA DE NAVEGACIÓN (Solo visible en pantalla) --}}
     <div class="no-print">
@@ -47,16 +47,16 @@
     </div>
 
     {{-- CONTENEDOR PRINCIPAL --}}
-    <div class="ticket-container max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden md:max-w-2xl my-8 p-8 print:my-0 print:p-2 print:shadow-none">
+    <div class="ticket-container max-w-md mx-auto bg-white dark:bg-[#000000] rounded-xl shadow-md overflow-hidden md:max-w-2xl my-8 p-8 print:my-0 print:p-2 print:shadow-none">
         
         {{-- Mensajes de Éxito/Error (para el envío de email) --}}
         @if (session('success'))
-            <div class="no-print mb-4 p-4 bg-green-100 text-green-700 rounded-lg">
+            <div class="no-print mb-4 p-4 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-lg">
                 {{ session('success') }}
             </div>
         @endif
         @if (session('error'))
-            <div class="no-print mb-4 p-4 bg-red-100 text-red-700 rounded-lg">
+            <div class="no-print mb-4 p-4 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-lg">
                 {{ session('error') }}
             </div>
         @endif
@@ -104,7 +104,7 @@
                 <span>TOTAL:</span>
                 <span>${{ number_format($sale->total_amount, 2) }}</span>
             </div>
-             <div class="text-sm text-gray-600 font-normal">
+             <div class="text-sm text-gray-600 dark:text-gray-400 font-normal">
                 <span>Método de Pago:</span>
                 <span>
                     @if($sale->payment_method === 'cash') Efectivo
@@ -114,7 +114,7 @@
                 </span>
             </div>
             @if($sale->payment_reference)
-            <div class="text-sm text-gray-600 font-normal">
+            <div class="text-sm text-gray-600 dark:text-gray-400 font-normal">
                 <span>Referencia:</span>
                 <span>{{ $sale->payment_reference }}</span>
             </div>
@@ -132,12 +132,12 @@
     <div class="no-print max-w-md mx-auto sm:px-6 lg:px-8 space-y-4">
         
         {{-- Botón Imprimir --}}
-        <button onclick="window.print()" class="w-full inline-flex justify-center items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+        <button onclick="window.print()" class="w-full inline-flex justify-center items-center px-4 py-2 bg-[#171A20] dark:bg-white text-white dark:text-[#171A20] border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-[#393C41] dark:hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-[#171A20] dark:focus:ring-white focus:ring-offset-2 transition ease-in-out duration-150">
             Imprimir Ticket
         </button>
 
         {{-- Formulario Email --}}
-        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
+        <div class="bg-white dark:bg-[#000000] overflow-hidden shadow-sm sm:rounded-lg p-6">
             <form method="POST" action="{{ route('pos.receipt.email', $sale->id) }}">
                 @csrf
                 <x-input-label for="email" :value="__('O enviar comprobante por correo:')" />
@@ -152,10 +152,16 @@
         </div>
 
         {{-- Botón Volver al POS --}}
-        <a href="{{ route('pos.index') }}" class="w-full inline-block text-center px-4 py-2 text-sm text-gray-700 hover:text-black">
+        <a href="{{ route('pos.index') }}" class="w-full inline-block text-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:text-black">
             &larr; Volver al Punto de Venta
         </a>
     </div>
 
 </body>
 </html>
+
+
+
+
+
+

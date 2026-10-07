@@ -31,29 +31,27 @@ class SettingsController extends Controller
 
         // Validar los datos del formulario
         $request->validate([
-            'gym_name' => 'required|string|max:255',
-            'gym_logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048', // Valida tipo y tamaño
-            'gym_main_image' => 'nullable|image|mimes:jpeg,png,jpg|max:4096', // Valida tipo y tamaño
-            'member_code_prefix' => 'nullable|string|max:10',
-            'app_timezone' => 'required|string|in:' . implode(',', $validTimezones), // Valida que sea una zona válida
-
-            // Validación para correo de reporte
+            'gym_name'               => 'required|string|max:255',
+            'gym_logo'               => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
+            'gym_main_image'         => 'nullable|image|mimes:jpeg,png,jpg|max:4096',
+            'member_code_prefix'     => 'nullable|string|max:10',
+            'app_timezone'           => 'required|string|in:' . implode(',', $validTimezones),
             'report_recipient_email' => 'nullable|email|max:255',
-
-            // Validación de correo para envío
-            'mail_host' => 'required|string',
-            'mail_port' => 'required|integer',
-            'mail_username' => 'required|email',
-            'mail_password' => 'required|string', // Es la contraseña de aplicación
-            'mail_encryption' => 'required|string',
-            'mail_from_name' => 'required|string|max:255',
+            'mail_host'              => 'required|string',
+            'mail_port'              => 'required|integer',
+            'mail_username'          => 'required|email',
+            'mail_password'          => 'required|string',
+            'mail_encryption'        => 'required|string',
+            'mail_from_name'         => 'required|string|max:255',
+            'biometrics_enabled'     => 'nullable|boolean',
         ]);
 
         // Actualiza o crea cada configuración en la base de datos
-        Setting::updateOrCreate(['key' => 'gym_name'], ['value' => $request->gym_name]);
-        Setting::updateOrCreate(['key' => 'member_code_prefix'], ['value' => $request->member_code_prefix]);
-        Setting::updateOrCreate(['key' => 'app_timezone'], ['value' => $request->app_timezone]);
-        Setting::updateOrCreate(['key' => 'report_recipient_email'], ['value' => $request->report_recipient_email]); // Guarda correo reporte
+        Setting::updateOrCreate(['key' => 'gym_name'],               ['value' => $request->gym_name]);
+        Setting::updateOrCreate(['key' => 'member_code_prefix'],      ['value' => $request->member_code_prefix]);
+        Setting::updateOrCreate(['key' => 'app_timezone'],            ['value' => $request->app_timezone]);
+        Setting::updateOrCreate(['key' => 'report_recipient_email'],  ['value' => $request->report_recipient_email]);
+        Setting::updateOrCreate(['key' => 'biometrics_enabled'],      ['value' => $request->has('biometrics_enabled') ? '1' : '0']);
 
         // Configuración de correo
         Setting::updateOrCreate(['key' => 'mail_host'], ['value' => $request->mail_host]);

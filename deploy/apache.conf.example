@@ -1,0 +1,10 @@
+# Adapt these paths; enable mod_rewrite and configure HTTPS for domain/LAN use.
+<VirtualHost *:80>
+    ServerName gym.example.com
+    DocumentRoot "C:/bigggym/public"
+    <Directory "C:/bigggym/public">
+        AllowOverride All
+        Require all granted
+        Options -Indexes +FollowSymLinks
+    </Directory>
+</VirtualHost>

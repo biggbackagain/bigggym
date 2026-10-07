@@ -1,14 +1,14 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
             {{ __('Editar Tarifa') }}: {{ $type->name }}
         </h2>
     </x-slot>
 
     <div class="py-12">
         <div class="max-w-xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 text-gray-900">
+            <div class="bg-white dark:bg-[#000000] overflow-hidden shadow-sm sm:rounded-lg">
+                <div class="p-6 text-gray-900 dark:text-white">
                     
                     <form method="POST" action="{{ route('admin.memberships.update', $type->id) }}">
                         @csrf
@@ -40,7 +40,7 @@
 
 
                         <div class="flex items-center justify-end mt-4">
-                            <a href="{{ route('admin.memberships.index') }}" class="text-gray-600 hover:text-gray-900 me-4">Cancelar</a>
+                            <a href="{{ route('admin.memberships.index') }}" class="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white me-4">Cancelar</a>
                             <x-primary-button class="ms-4">
                                 {{ __('Actualizar Tarifa') }}
                             </x-primary-button>
@@ -51,3 +51,9 @@
         </div>
     </div>
 </x-app-layout>
+
+
+
+
+
+

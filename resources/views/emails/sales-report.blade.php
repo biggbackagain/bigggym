@@ -67,3 +67,9 @@ No se registraron otros movimientos de caja en este período.
 Saludos,<br>
 El equipo de {{ $gymName }}
 </x-mail::message>
+
+
+
+
+
+

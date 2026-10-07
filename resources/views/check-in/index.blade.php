@@ -12,7 +12,7 @@
         <!-- Topbar -->
         <div class="w-full max-w-[1383px] mx-auto px-6 py-6 flex justify-between items-center">
             <a href="{{ route('dashboard') }}" class="text-[20px] font-medium text-[#171A20] dark:text-white tracking-tight hover:opacity-70 transition-opacity">
-                {{ $globalSettings['gym_name'] ?? 'BiggGym' }} <span class="text-[11px] text-[#718096] tracking-[2px] ml-3 uppercase">Acceso</span>
+                <span class="text-[16px] font-medium text-[#171A20] dark:text-white uppercase tracking-[2px]">ACCESO</span>
             </a>
             <button type="button" id="kiosk-toggle" class="text-[14px] font-medium text-[#171A20] dark:text-white bg-transparent hover:bg-[#F4F4F4] dark:bg-[#111111] px-4 py-2 rounded-[4px] transition-colors">
                 <span class="hidden sm:inline">Pantalla completa</span>
@@ -147,6 +147,7 @@
         }
     </style>
 </x-app-layout>
+
 
 
 

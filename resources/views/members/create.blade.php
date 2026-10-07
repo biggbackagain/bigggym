@@ -49,7 +49,7 @@
                         {{-- 🟢 MÓDULO BIOMÉTRICO (INICIO) 🟢 --}}
                         @if(config('services.biometrics.enabled'))
                         <div class="mb-8 p-6 bg-gray-50 dark:bg-[#111111] border border-gray-200 dark:border-[#333333] rounded-lg">
-                            <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">Registro Biométrico (Opcional)</h3>
+                            <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">Registro Biometrico (IA Integrada)</h3>
                             <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Captura el rostro del socio para el control de acceso automatizado. Asegúrate de que mire fijamente a la cámara.</p>
 
                             <div class="relative bg-black rounded-lg overflow-hidden w-full max-w-md mx-auto flex items-center justify-center shadow-inner" style="height: 250px;">
@@ -132,8 +132,8 @@
             }
         }
 
-        // 2. Lógica del motor Biométrico
-        document.addEventListener('DOMContentLoaded', function () {
+        // 2. Logica del motor Biometrico (IA Integrada)
+        document.addEventListener('DOMContentLoaded', async function () {
             const video = document.getElementById('videoElement');
             if (!video) return;
             const canvas = document.getElementById('canvasElement');
@@ -144,12 +144,24 @@
             const faceVectorInput = document.getElementById('face_vector_input');
 
             let stream = null;
+            let modelsLoaded = false;
             window.addEventListener('pagehide', () => stream?.getTracks().forEach(track => track.stop()));
 
-            // Encender cámara
+            // Encender camara
             btnStart.addEventListener('click', async () => {
                 btnStart.disabled = true;
+                statusMessage.textContent = 'Cargando modelos de IA...';
+                statusMessage.className = 'mt-4 text-center text-sm font-medium text-blue-600';
+                
                 try {
+                    if (!modelsLoaded) {
+                        await faceapi.nets.ssdMobilenetv1.loadFromUri('/models');
+                        await faceapi.nets.faceLandmark68Net.loadFromUri('/models');
+                        await faceapi.nets.faceRecognitionNet.loadFromUri('/models');
+                        modelsLoaded = true;
+                    }
+                    
+                    statusMessage.textContent = 'Conectando camara...';
                     stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 960 }, height: { ideal: 720 } }, audio: false });
                     video.srcObject = stream;
                     await video.play();
@@ -161,66 +173,48 @@
                     statusMessage.textContent = '';
                 } catch (err) {
                     stream?.getTracks().forEach(track => track.stop());
-                    statusMessage.textContent = 'Error: No se pudo acceder a la cámara.';
+                    statusMessage.textContent = 'Error: No se pudo acceder a la camara. (' + err.message + ')';
                     statusMessage.className = 'mt-4 text-center text-sm font-medium text-red-600';
                 } finally { btnStart.disabled = false; }
             });
 
-            // Tomar foto y extraer matemáticas
+            // Tomar foto y extraer matematicas (Browser side!)
             btnCapture.addEventListener('click', async () => {
                 if (video.readyState < 2 || !video.videoWidth) {
-                    statusMessage.textContent = 'Espera a que la cámara esté lista.';
+                    statusMessage.textContent = 'Espera a que la camara este lista.';
                     return;
                 }
-                statusMessage.textContent = 'Analizando rostro con Inteligencia Artificial...';
+                statusMessage.textContent = 'Analizando rostro...';
                 statusMessage.className = 'mt-4 text-center text-sm font-medium text-blue-600';
                 btnCapture.disabled = true;
                 btnCapture.classList.add('opacity-50');
 
                 try {
-                    const context = canvas.getContext('2d');
-                    canvas.width = Math.min(video.videoWidth, 960);
-                    canvas.height = Math.round(video.videoHeight * canvas.width / video.videoWidth);
-                    context.drawImage(video, 0, 0, canvas.width, canvas.height);
-                    const base64Image = canvas.toDataURL('image/jpeg', 0.9);
-                    const response = await fetch('{{ route('biometrics.extract') }}', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json',
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}' // Token nativo de Blade para seguridad
-                        },
-                        body: JSON.stringify({ image: base64Image })
-                    });
-
-                    const data = await response.json();
-
-                    if (response.ok && data.success && Array.isArray(data.vector) && data.vector.length === 128) {
+                    const detection = await faceapi.detectSingleFace(video).withFaceLandmarks().withFaceDescriptor();
+                    
+                    if (detection) {
                         statusMessage.textContent = 'Rostro capturado. Guarda al socio para completar el registro.';
                         statusMessage.className = 'mt-4 text-center text-sm font-medium text-green-600';
 
-                        // Apagar cámara
+                        // Apagar camara
                         stream.getTracks().forEach(track => track.stop());
                         video.style.display = 'none';
                         btnCapture.style.display = 'none';
                         btnStart.style.display = 'block';
                         btnStart.textContent = 'Volver a capturar';
                         placeholder.style.display = 'flex';
-                        placeholder.textContent = 'Rostro capturado ✓';
+                        placeholder.textContent = 'Rostro capturado OK';
 
-                        // Guardar en el input oculto
-                        faceVectorInput.value = JSON.stringify(data.vector);
+                        // Guardar en el input oculto (Array de 128)
+                        const vectorArray = Array.from(detection.descriptor);
+                        faceVectorInput.value = JSON.stringify(vectorArray);
                     } else {
-                        statusMessage.textContent = data.message || 'No se pudo capturar el rostro. Reintenta.';
+                        statusMessage.textContent = 'No se detecto un rostro claro. Mira fijamente a la camara e ilumina tu rostro.';
                         statusMessage.className = 'mt-4 text-center text-sm font-medium text-red-600';
-                        btnCapture.disabled = false;
-                        btnCapture.classList.remove('opacity-50');
                     }
                 } catch (err) {
-                    statusMessage.textContent = 'Error de conexión con el microservicio de IA.';
+                    statusMessage.textContent = 'Error al procesar la imagen con IA.';
                     statusMessage.className = 'mt-4 text-center text-sm font-medium text-red-600';
-                    btnCapture.disabled = false;
-                    btnCapture.classList.remove('opacity-50');
                 } finally {
                     btnCapture.disabled = false;
                     btnCapture.classList.remove('opacity-50');

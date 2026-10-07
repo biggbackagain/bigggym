@@ -46,7 +46,8 @@ return [
         'mysql' => [
             'dump' => [
                 'dump_binary_path' => env('DB_DUMP_BINARY_PATH', ''),
-                'use_single_transaction' => true,
+                'use_single_transaction' => false,
+                'add_extra_option' => '--no-tablespaces --set-gtid-purged=OFF',
             ],
             'driver' => 'mysql',
             'url' => env('DB_URL'),

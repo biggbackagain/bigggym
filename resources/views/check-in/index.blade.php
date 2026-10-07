@@ -9,11 +9,11 @@
             </a>
             <div class="flex items-center gap-2">
                 <a href="{{ route('members.create') }}" class="text-[14px] font-medium text-[#171A20] dark:text-white bg-transparent hover:bg-[#F4F4F4] dark:bg-[#111111] px-4 py-2 rounded-[4px] transition-colors">Registrar socio</a>
-            <button
-            </div> type="button" id="kiosk-toggle" class="text-[14px] font-medium text-[#171A20] dark:text-white bg-transparent hover:bg-[#F4F4F4] dark:bg-[#111111] px-4 py-2 rounded-[4px] transition-colors">
-                <span class="hidden sm:inline">Pantalla completa</span>
-                <span class="sm:hidden">Ampliar</span>
-            </button>
+                <button type="button" id="kiosk-toggle" class="text-[14px] font-medium text-[#171A20] dark:text-white bg-transparent hover:bg-[#F4F4F4] dark:bg-[#111111] px-4 py-2 rounded-[4px] transition-colors">
+                    <span class="hidden sm:inline">Pantalla completa</span>
+                    <span class="sm:hidden">Ampliar</span>
+                </button>
+            </div>
         </div>
 
         <div class="flex-grow w-full max-w-[1383px] mx-auto px-6 pb-12 flex items-center justify-center">

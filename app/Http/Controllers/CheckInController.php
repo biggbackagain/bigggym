@@ -73,7 +73,7 @@ class CheckInController extends Controller
             'message' => $allowed ? 'Tu membresía está vigente. ¡Buen entrenamiento!' : 'No tienes una membresía vigente. Acércate a recepción.',
             'gym_name' => Setting::where('key', 'gym_name')->value('value') ?? 'BiggGym',
             'end_date' => $subscription?->end_date->format('d/m/Y'),
-            'photo_path' => $member->profile_photo_path ? Storage::url($member->profile_photo_path) : null,
+            'photo_path' => $member->profile_photo_path ? (str_starts_with($member->profile_photo_path, 'http') ? $member->profile_photo_path : Storage::url($member->profile_photo_path)) : null,
         ];
     }
 }

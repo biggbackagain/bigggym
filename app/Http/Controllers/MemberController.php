@@ -64,9 +64,14 @@ class MemberController extends Controller
             'face_vector.*' => 'required|numeric|between:-2,2',
         ]);
 
-        $photoRelativePath = $request->hasFile('profile_photo') 
-            ? $request->file('profile_photo')->store('member_photos', 'public') 
-            : null;
+        $photoRelativePath = null;
+        if ($request->hasFile('profile_photo')) {
+            if (env('CLOUDINARY_URL')) {
+                $photoRelativePath = cloudinary()->upload($request->file('profile_photo')->getRealPath(), ['folder' => 'member_photos'])->getSecurePath();
+            } else {
+                $photoRelativePath = $request->file('profile_photo')->store('member_photos', 'public');
+            }
+        }
 
         // 1. Se crea el miembro base
         $member = new Member();
@@ -133,8 +138,14 @@ class MemberController extends Controller
         ]);
 
         if ($request->hasFile('profile_photo')) {
-            if ($member->profile_photo_path) { Storage::disk('public')->delete($member->profile_photo_path); }
-            $member->profile_photo_path = $request->file('profile_photo')->store('member_photos', 'public');
+            if ($member->profile_photo_path && !str_starts_with($member->profile_photo_path, 'http')) {
+                Storage::disk('public')->delete($member->profile_photo_path);
+            }
+            if (env('CLOUDINARY_URL')) {
+                $member->profile_photo_path = cloudinary()->upload($request->file('profile_photo')->getRealPath(), ['folder' => 'member_photos'])->getSecurePath();
+            } else {
+                $member->profile_photo_path = $request->file('profile_photo')->store('member_photos', 'public');
+            }
         }
 
         $member->update(array_merge($validated, ['is_student' => $request->has('is_student')]));
@@ -214,4 +225,5 @@ class MemberController extends Controller
 
     public function destroy(Member $member) { $member->delete(); return redirect()->back(); }
 }
+
 

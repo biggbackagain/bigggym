@@ -1,11 +1,4 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="text-[17px] font-medium text-[#171A20] dark:text-white">Control de acceso</h2>
-            <a href="{{ route('members.create') }}" class="text-[14px] text-[#5C5E62] dark:text-gray-400 hover:text-[#171A20] dark:text-white transition-colors underline underline-offset-4 decoration-transparent hover:decoration-[#171A20]">Registrar socio</a>
-        </div>
-    </x-slot>
-
     <!-- Main Container -->
     <section id="access-station" class="w-full bg-white dark:bg-[#000000] flex flex-col transition-all duration-300" data-endpoint="{{ route('check-in.biometric') }}" style="min-height: calc(100vh - 65px);">
         
@@ -14,7 +7,10 @@
             <a href="{{ route('dashboard') }}" class="text-[20px] font-medium text-[#171A20] dark:text-white tracking-tight hover:opacity-70 transition-opacity">
                 <span class="text-[16px] font-medium text-[#171A20] dark:text-white uppercase tracking-[2px]">ACCESO</span>
             </a>
-            <button type="button" id="kiosk-toggle" class="text-[14px] font-medium text-[#171A20] dark:text-white bg-transparent hover:bg-[#F4F4F4] dark:bg-[#111111] px-4 py-2 rounded-[4px] transition-colors">
+            <div class="flex items-center gap-2">
+                <a href="{{ route('members.create') }}" class="text-[14px] font-medium text-[#171A20] dark:text-white bg-transparent hover:bg-[#F4F4F4] dark:bg-[#111111] px-4 py-2 rounded-[4px] transition-colors">Registrar socio</a>
+            <button
+            </div> type="button" id="kiosk-toggle" class="text-[14px] font-medium text-[#171A20] dark:text-white bg-transparent hover:bg-[#F4F4F4] dark:bg-[#111111] px-4 py-2 rounded-[4px] transition-colors">
                 <span class="hidden sm:inline">Pantalla completa</span>
                 <span class="sm:hidden">Ampliar</span>
             </button>
@@ -147,6 +143,8 @@
         }
     </style>
 </x-app-layout>
+
+
 
 
 

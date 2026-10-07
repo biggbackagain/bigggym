@@ -1,8 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-            {{ __('Enviar Correos Masivos') }}
-        </h2>
+        {{ __('Enviar Correos Masivos') }}
     </x-slot>
 
     <div class="py-12">

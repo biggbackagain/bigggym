@@ -1,8 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-            {{ __('Editar Tarifa') }}: {{ $type->name }}
-        </h2>
+        {{ __('Editar Tarifa') }}: {{ $type->name }}
     </x-slot>
 
     <div class="py-12">

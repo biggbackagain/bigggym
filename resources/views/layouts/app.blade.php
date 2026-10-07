@@ -31,6 +31,14 @@
 
                 
 
+                @if (isset($header))
+                    <div class="w-full max-w-[1383px] mx-auto px-6 pt-8 pb-2 print:hidden">
+                        <h2 class="text-[16px] font-medium text-[#171A20] dark:text-white uppercase tracking-[2px]">
+                            {{ $header }}
+                        </h2>
+                    </div>
+                @endif
+
                 <main>
                     {{ $slot }}
                 </main>
@@ -63,6 +71,7 @@
         @stack('scripts')
     </body>
 </html>
+
 
 
 

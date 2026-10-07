@@ -1,13 +1,11 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight print:hidden">
-            {{-- Título dinámico --}}
+        {{-- Título dinámico --}}
             @if($startDate->isSameDay($endDate))
                 {{ __('Mi Corte del Día') }} ({{ $startDate->format('d/m/Y') }})
             @else
                 {{ __('Mi Corte del') }} {{ $startDate->format('d/m/Y') }} {{ __('al') }} {{ $endDate->format('d/m/Y') }}
             @endif
-        </h2>
     </x-slot>
 
     <div class="py-12 print:py-0">

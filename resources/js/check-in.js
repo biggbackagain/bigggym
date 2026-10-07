@@ -56,7 +56,7 @@ if (station) {
                 }
             }
             if (labeledDescriptors.length === 0) return null;
-            return new faceapi.FaceMatcher(labeledDescriptors, 0.45);
+            return new faceapi.FaceMatcher(labeledDescriptors, 0.55);
         } catch(e) {
             console.error('Error loading vectors:', e);
             return null;
@@ -246,5 +246,15 @@ if (station) {
     document.addEventListener('fullscreenchange', () => {
         kiosk.textContent = document.fullscreenElement ? 'Salir de pantalla completa' : 'Pantalla completa';
     });
+
+    // Mostrar resultado inicial (Manual Check-in)
+    const initialResultScript = document.getElementById('initial-access-result');
+    if (initialResultScript && initialResultScript.textContent !== 'null' && initialResultScript.textContent.trim() !== '') {
+        try {
+            const initialResult = JSON.parse(initialResultScript.textContent);
+            if (initialResult) showResult(initialResult);
+        } catch (e) {}
+    }
 }
+
 

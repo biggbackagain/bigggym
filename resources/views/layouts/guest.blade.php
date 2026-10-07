@@ -18,7 +18,7 @@
             <header class="w-full px-6 py-4 flex justify-between items-center">
                 <a href="/" class="flex items-center gap-3">
                     @if(isset($globalSettings['gym_logo']) && $globalSettings['gym_logo'] && (str_starts_with($globalSettings['gym_logo'], 'http') || Storage::disk('public')->exists($globalSettings['gym_logo'])))
-                        <img src="{{ (!empty($globalSettings['gym_logo']) && str_starts_with($globalSettings['gym_logo'], 'http') ? $globalSettings['gym_logo'] : Storage::url($globalSettings['gym_logo'])) }}" alt="Logo" class="block h-16 w-auto object-contain">
+                        <img src="{{ (!empty($globalSettings['gym_logo']) && str_starts_with($globalSettings['gym_logo'], 'http') ? $globalSettings['gym_logo'] : Storage::url($globalSettings['gym_logo'])) }}" alt="Logo" class="w-8 h-8 object-contain">
                     @endif
                     <span class="text-[15px] font-medium text-[#171A20] dark:text-white uppercase tracking-[2px]">{{ $globalSettings['gym_name'] ?? 'VYPER' }}</span>
                 </a>

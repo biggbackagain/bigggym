@@ -29,13 +29,7 @@
                 {{-- Incluye la navegación --}}
                 @include('layouts.navigation')
 
-                @if (isset($header))
-                    <header class="bg-white dark:bg-[#000000] border-b border-[#EEEEEE] dark:border-[#333333] print:hidden">
-                        <div class="max-w-[1383px] mx-auto py-6 px-4 sm:px-6 lg:px-8">
-                            {{ $header }}
-                        </div>
-                    </header>
-                @endif
+                
 
                 <main>
                     {{ $slot }}
@@ -69,6 +63,7 @@
         @stack('scripts')
     </body>
 </html>
+
 
 
 

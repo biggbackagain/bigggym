@@ -25,6 +25,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        if (config('app.env') === 'production') { \Illuminate\Support\Facades\URL::forceScheme('https'); }
         // Compartir configuración global con todas las vistas
         try {
             // Verifica si la tabla 'settings' existe para evitar errores durante migraciones

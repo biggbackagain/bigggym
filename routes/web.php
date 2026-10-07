@@ -66,6 +66,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('inventory', [InventoryController::class, 'update'])->name('inventory.update');
     Route::post('/api/biometrics/extract', [BiometricController::class, 'extractVector'])->name('biometrics.extract');
     Route::post('/check-in/biometric', [App\Http\Controllers\CheckInController::class, 'biometricCheckIn'])->name('check-in.biometric');
+    Route::get('/check-in/biometric/vectors', [App\Http\Controllers\CheckInController::class, 'biometricVectors'])->name('check-in.biometric.vectors');
 
     // Módulo de Punto de Venta (POS)
     Route::get('pos', [PosController::class, 'index'])->name('pos.index');

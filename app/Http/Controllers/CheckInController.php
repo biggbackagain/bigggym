@@ -27,42 +27,31 @@ class CheckInController extends Controller
         return redirect()->route('check-in.index')->with('access_result', $this->processAccess($member));
     }
 
-    public function biometricCheckIn(Request $request, BiometricClient $biometrics)
+    public function biometricCheckIn(Request $request)
     {
         if (!config('services.biometrics.enabled')) {
-            return response()->json(['status' => 'disabled', 'message' => 'Reconocimiento desactivado. Usa tu código de socio.'], 503);
-        }
-        $request->validate(['image' => 'required|string|max:6000000']);
-        $members = Member::whereNotNull('face_vector')->get(['id', 'face_vector'])
-            ->filter(fn ($member) => is_array($member->face_vector)
-                && count($member->face_vector) === 512
-                && collect($member->face_vector)->every(fn ($value) => is_numeric($value) && is_finite((float) $value)))
-            ->map(fn ($member) => ['id' => $member->id, 'vector' => array_values($member->face_vector)])
-            ->values()->all();
-
-        if (empty($members)) {
-            return response()->json(['status' => 'waiting', 'message' => 'No hay rostros registrados. Usa tu código de socio.']);
+            return response()->json(['status' => 'disabled', 'message' => 'Reconocimiento desactivado.'], 503);
         }
 
-        try {
-            $response = $biometrics->connection()->post('/api/recognize', [
-                    'image_base64' => $request->image,
-                    'known_faces' => $members,
-                ]);
-            $result = $response->json();
-            if (!$response->successful() || !is_array($result) || ($result['success'] ?? false) !== true) {
-                return response()->json(['status' => 'unavailable', 'message' => 'Reconocimiento no disponible. Usa tu código o reintenta.'], 503);
-            }
-            if (($result['match'] ?? false) !== true) {
-                return response()->json(['status' => 'waiting', 'message' => $result['message'] ?? 'Mira de frente a la cámara.']);
-            }
-            if (!isset($result['member_id']) || !in_array($result['member_id'], array_column($members, 'id'), true)) {
-                return response()->json(['status' => 'unavailable', 'message' => 'Respuesta de reconocimiento inválida.'], 503);
-            }
-            return response()->json($this->processAccess(Member::find($result['member_id'])));
-        } catch (\Exception $e) {
-            return response()->json(['status' => 'unavailable', 'message' => 'Sin conexión al reconocimiento. Usa tu código de socio.'], 503);
-        }
+        $request->validate([
+            'member_id' => 'required|exists:members,id',
+        ]);
+
+        $member = Member::find($request->member_id);
+        return response()->json($this->processAccess($member));
+    }
+
+    public function biometricVectors()
+    {
+        $members = Member::whereNotNull('biometric_vector')->get(['id', 'name', 'biometric_vector', 'profile_photo_path'])
+            ->map(fn($m) => [
+                'id' => $m->id, 
+                'name' => $m->name, 
+                'photo_path' => $m->profile_photo_path ? \Illuminate\Support\Facades\Storage::url($m->profile_photo_path) : null,
+                'vector' => json_decode($m->biometric_vector)
+            ])->values()->all();
+            
+        return response()->json($members);
     }
 
     private function processAccess(?Member $member): array

@@ -1,8 +1,8 @@
 <template>
   <div class="mt-6 border border-gray-200 p-6 rounded-lg bg-white shadow-sm">
-    <h3 class="text-lg font-medium text-gray-900 mb-4">Registro Biométrico (Opcional)</h3>
+    <h3 class="text-lg font-medium text-gray-900 mb-4">Registro Biométrico (IA Integrada)</h3>
     <p class="text-sm text-gray-500 mb-4">
-      Captura el rostro del socio para permitirle el acceso automatizado. Asegúrate de que solo haya una persona en el cuadro.
+      Captura el rostro del socio para permitirle el acceso automatizado. Asegúrate de que solo haya una persona en el cuadro y esté bien iluminada.
     </p>
 
     <div class="relative bg-gray-900 rounded-lg overflow-hidden w-full max-w-md mx-auto aspect-video flex items-center justify-center shadow-inner">
@@ -14,8 +14,8 @@
     </div>
 
     <div class="mt-6 flex justify-center gap-4">
-      <button type="button" @click="startCamera" v-if="!isCameraOn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-md transition duration-150">
-        Encender Cámara
+      <button type="button" @click="startCamera" v-if="!isCameraOn" :disabled="isLoadingModels" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-md transition duration-150 disabled:opacity-50">
+        {{ isLoadingModels ? 'Cargando IA...' : 'Encender Cámara' }}
       </button>
       
       <button type="button" @click="takePhoto" v-if="isCameraOn" :disabled="isProcessing" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-md transition duration-150 disabled:opacity-50">
@@ -37,21 +37,41 @@
 
 <script setup>
 import { ref, onBeforeUnmount } from 'vue';
-import axios from 'axios';
+import * as faceapi from '@vladmandic/face-api';
 
-// Emite el vector de 128 números al componente padre (el formulario)
 const emit = defineEmits(['vector-extracted']);
 
 const video = ref(null);
 const canvas = ref(null);
 const isCameraOn = ref(false);
 const isProcessing = ref(false);
+const isLoadingModels = ref(false);
+const modelsLoaded = ref(false);
 const message = ref('');
 const isSuccess = ref(false);
 
 let stream = null;
 
+const loadModels = async () => {
+    if (modelsLoaded.value) return;
+    isLoadingModels.value = true;
+    message.value = 'Cargando modelos de Inteligencia Artificial...';
+    try {
+        await faceapi.nets.ssdMobilenetv1.loadFromUri('/models');
+        await faceapi.nets.faceLandmark68Net.loadFromUri('/models');
+        await faceapi.nets.faceRecognitionNet.loadFromUri('/models');
+        modelsLoaded.value = true;
+        message.value = '';
+    } catch (e) {
+        message.value = 'Error al cargar los modelos de IA.';
+        console.error(e);
+    }
+    isLoadingModels.value = false;
+};
+
 const startCamera = async () => {
+    await loadModels();
+    if (!modelsLoaded.value) return;
     try {
         stream = await navigator.mediaDevices.getUserMedia({ video: true });
         video.value.srcObject = stream;
@@ -74,41 +94,29 @@ const takePhoto = async () => {
     isProcessing.value = true;
     message.value = 'Extrayendo vector biométrico...';
 
-    const context = canvas.value.getContext('2d');
-    canvas.value.width = video.value.videoWidth;
-    canvas.value.height = video.value.videoHeight;
-    // Capturamos la imagen en el canvas
-    context.drawImage(video.value, 0, 0, canvas.value.width, canvas.value.height);
-
-    // Convertimos la imagen a Base64 ligero (formato JPEG al 80% de calidad)
-    const base64Image = canvas.value.toDataURL('image/jpeg', 0.8);
-
     try {
-        // Hacemos la petición a nuestra API de Laravel
-        const response = await axios.post('/api/biometrics/extract', {
-            image: base64Image
-        });
-
-        if (response.data.success) {
+        const detection = await faceapi.detectSingleFace(video.value).withFaceLandmarks().withFaceDescriptor();
+        
+        if (detection) {
             message.value = '¡Rostro escaneado y vectorizado con éxito!';
             isSuccess.value = true;
-            // Apagamos la cámara porque ya tenemos lo que queríamos
             stopCamera(); 
-            // Le pasamos el vector al formulario principal de Vue
-            emit('vector-extracted', JSON.stringify(response.data.vector));
+            // array from Float32Array
+            const vectorArray = Array.from(detection.descriptor);
+            emit('vector-extracted', JSON.stringify(vectorArray));
         } else {
-            message.value = response.data.message;
+            message.value = 'No se detectó un rostro claro. Mira fijamente a la cámara e ilumina tu rostro.';
             isSuccess.value = false;
         }
     } catch (error) {
-        message.value = error.response?.data?.message || 'Error de conexión con el motor de IA.';
+        message.value = 'Error al procesar la imagen.';
+        console.error(error);
         isSuccess.value = false;
     } finally {
         isProcessing.value = false;
     }
 };
 
-// Medida de seguridad: apagar la cámara si la recepcionista cambia de página web
 onBeforeUnmount(() => {
     stopCamera();
 });

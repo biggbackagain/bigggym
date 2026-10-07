@@ -60,7 +60,7 @@ class MemberController extends Controller
             'membership_type_id' => 'nullable|exists:membership_types,id',
             'payment_method' => 'required_with:membership_type_id|string|nullable',
             'payment_reference' => 'nullable|string|max:100',
-            'face_vector' => 'nullable|array|size:512',
+            'face_vector' => 'nullable|array|size:128',
             'face_vector.*' => 'required|numeric|between:-2,2',
         ]);
 
@@ -214,3 +214,4 @@ class MemberController extends Controller
 
     public function destroy(Member $member) { $member->delete(); return redirect()->back(); }
 }
+

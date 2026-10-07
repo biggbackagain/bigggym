@@ -43,12 +43,12 @@ class CheckInController extends Controller
 
     public function biometricVectors()
     {
-        $members = Member::whereNotNull('biometric_vector')->get(['id', 'name', 'biometric_vector', 'profile_photo_path'])
+        $members = Member::whereNotNull('face_vector')->get(['id', 'name', 'face_vector', 'profile_photo_path'])
             ->map(fn($m) => [
                 'id' => $m->id, 
                 'name' => $m->name, 
                 'photo_path' => $m->profile_photo_path ? \Illuminate\Support\Facades\Storage::url($m->profile_photo_path) : null,
-                'vector' => json_decode($m->biometric_vector)
+                'vector' => json_decode($m->face_vector)
             ])->values()->all();
             
         return response()->json($members);
@@ -77,3 +77,4 @@ class CheckInController extends Controller
         ];
     }
 }
+

@@ -66,7 +66,7 @@ class MemberController extends Controller
 
         $photoRelativePath = null;
         if ($request->hasFile('profile_photo')) {
-            if (env('CLOUDINARY_URL')) {
+            if (config('filesystems.disks.cloudinary.url')) {
                 $photoRelativePath = cloudinary()->uploadApi()->upload($request->file('profile_photo')->getRealPath(), ['folder' => 'member_photos'])['secure_url'];
             } else {
                 $photoRelativePath = $request->file('profile_photo')->store('member_photos', 'public');
@@ -141,7 +141,7 @@ class MemberController extends Controller
             if ($member->profile_photo_path && !str_starts_with($member->profile_photo_path, 'http')) {
                 Storage::disk('public')->delete($member->profile_photo_path);
             }
-            if (env('CLOUDINARY_URL')) {
+            if (config('filesystems.disks.cloudinary.url')) {
                 $member->profile_photo_path = cloudinary()->uploadApi()->upload($request->file('profile_photo')->getRealPath(), ['folder' => 'member_photos'])['secure_url'];
             } else {
                 $member->profile_photo_path = $request->file('profile_photo')->store('member_photos', 'public');

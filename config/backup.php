@@ -11,13 +11,13 @@ return [
         'source' => [
             'files' => [
                 'include' => [
-                    storage_path('app/private/public'),
+                    storage_path('app/public'),
                 ],
                 'exclude' => [
                     storage_path('app/backups'),
                 ],
                 'follow_links' => false,
-                'ignore_unreadable_directories' => false,
+                'ignore_unreadable_directories' => true,
                 'relative_path' => null,
             ],
             'databases' => [
